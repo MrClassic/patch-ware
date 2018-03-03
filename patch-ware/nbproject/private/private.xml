@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <data xmlns="http://www.netbeans.org/ns/make-project-private/1">
+        <activeConfTypeElem>1</activeConfTypeElem>
+        <activeConfIndexElem>0</activeConfIndexElem>
+    </data>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/home/nate/NetBeansProjects/Audio/InputDevice.cpp</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/BiquadFilter.cpp</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/Filter.cpp</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/OutputDevice.cpp</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/Patch.h</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/Delay.cpp</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/BiquadFilter.h</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/OutputDevice.h</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/FIRFilter.cpp</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/FIRFilter.h</file>
+            <file>file:/home/nate/NetBeansProjects/Audio/Compressor.cpp</file>
+        </group>
+    </open-files>
+</project-private>
