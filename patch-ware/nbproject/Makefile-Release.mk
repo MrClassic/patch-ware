@@ -74,11 +74,11 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware ${OBJECTFILES} ${LDLIBSOPTIONS}
 
 ${OBJECTDIR}/BiquadFilter.o: BiquadFilter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -181,7 +181,7 @@ ${OBJECTDIR}/sineTable.o: sineTable.cpp
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware
 
 # Subprojects
 .clean-subprojects:

@@ -74,106 +74,106 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware
 
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio: ${OBJECTFILES}
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware ${OBJECTFILES} ${LDLIBSOPTIONS}
 
 ${OBJECTDIR}/BiquadFilter.o: BiquadFilter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/BiquadFilter.o BiquadFilter.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/BiquadFilter.o BiquadFilter.cpp
 
 ${OBJECTDIR}/Compressor.o: Compressor.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Compressor.o Compressor.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Compressor.o Compressor.cpp
 
 ${OBJECTDIR}/Delay.o: Delay.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Delay.o Delay.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Delay.o Delay.cpp
 
 ${OBJECTDIR}/Distortion.o: Distortion.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Distortion.o Distortion.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Distortion.o Distortion.cpp
 
 ${OBJECTDIR}/FIRFilter.o: FIRFilter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/FIRFilter.o FIRFilter.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/FIRFilter.o FIRFilter.cpp
 
 ${OBJECTDIR}/Filter.o: Filter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Filter.o Filter.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Filter.o Filter.cpp
 
 ${OBJECTDIR}/Gain.o: Gain.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Gain.o Gain.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Gain.o Gain.cpp
 
 ${OBJECTDIR}/IIRFilter.o: IIRFilter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/IIRFilter.o IIRFilter.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/IIRFilter.o IIRFilter.cpp
 
 ${OBJECTDIR}/InputDevice.o: InputDevice.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/InputDevice.o InputDevice.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/InputDevice.o InputDevice.cpp
 
 ${OBJECTDIR}/OutputDevice.o: OutputDevice.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/OutputDevice.o OutputDevice.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/OutputDevice.o OutputDevice.cpp
 
 ${OBJECTDIR}/Parameter.o: Parameter.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Parameter.o Parameter.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Parameter.o Parameter.cpp
 
 ${OBJECTDIR}/Patch.o: Patch.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Patch.o Patch.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/Patch.o Patch.cpp
 
 ${OBJECTDIR}/QuadraticWaveGenerator.o: QuadraticWaveGenerator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/QuadraticWaveGenerator.o QuadraticWaveGenerator.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/QuadraticWaveGenerator.o QuadraticWaveGenerator.cpp
 
 ${OBJECTDIR}/SawtoothWaveGenerator.o: SawtoothWaveGenerator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SawtoothWaveGenerator.o SawtoothWaveGenerator.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SawtoothWaveGenerator.o SawtoothWaveGenerator.cpp
 
 ${OBJECTDIR}/SineWaveGenerator.o: SineWaveGenerator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SineWaveGenerator.o SineWaveGenerator.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SineWaveGenerator.o SineWaveGenerator.cpp
 
 ${OBJECTDIR}/SquareWaveGenerator.o: SquareWaveGenerator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SquareWaveGenerator.o SquareWaveGenerator.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/SquareWaveGenerator.o SquareWaveGenerator.cpp
 
 ${OBJECTDIR}/TriangleWaveGenerator.o: TriangleWaveGenerator.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/TriangleWaveGenerator.o TriangleWaveGenerator.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/TriangleWaveGenerator.o TriangleWaveGenerator.cpp
 
 ${OBJECTDIR}/driver.o: driver.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/driver.o driver.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/driver.o driver.cpp
 
 ${OBJECTDIR}/sineTable.o: sineTable.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/sineTable.o sineTable.cpp
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/sineTable.o sineTable.cpp
 
 # Subprojects
 .build-subprojects:
@@ -181,7 +181,7 @@ ${OBJECTDIR}/sineTable.o: sineTable.cpp
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/audio
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/patch-ware
 
 # Subprojects
 .clean-subprojects:

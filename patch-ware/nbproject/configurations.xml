@@ -8,7 +8,7 @@
         <itemPath>Circular.h</itemPath>
         <itemPath>LinkedList.h</itemPath>
       </logicalFolder>
-      <logicalFolder name="f2" displayName="Effects" projectFiles="true">
+      <logicalFolder name="f1" displayName="Effects" projectFiles="true">
         <itemPath>BiquadFilter.h</itemPath>
         <itemPath>Compressor.h</itemPath>
         <itemPath>Delay.h</itemPath>
@@ -20,7 +20,14 @@
         <itemPath>IIRFilter.h</itemPath>
         <itemPath>InvertDistortion.h</itemPath>
       </logicalFolder>
-      <logicalFolder name="f1" displayName="Signal Generators" projectFiles="true">
+      <logicalFolder name="f3" displayName="Signal Handlers" projectFiles="true">
+        <itemPath>Controller.h</itemPath>
+        <itemPath>InputDevice.h</itemPath>
+        <itemPath>OutputDevice.h</itemPath>
+        <itemPath>Parameter.h</itemPath>
+        <itemPath>Patch.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f2" displayName="Wave Generators" projectFiles="true">
         <itemPath>QuadraticWaveGenerator.h</itemPath>
         <itemPath>SawtoothWaveGenerator.h</itemPath>
         <itemPath>SineWaveGenerator.h</itemPath>
@@ -28,13 +35,6 @@
         <itemPath>TriangleWaveGenerator.h</itemPath>
         <itemPath>WaveGenerator.h</itemPath>
         <itemPath>sineTable.h</itemPath>
-      </logicalFolder>
-      <logicalFolder name="f3" displayName="Signal Handlers" projectFiles="true">
-        <itemPath>Controller.h</itemPath>
-        <itemPath>InputDevice.h</itemPath>
-        <itemPath>OutputDevice.h</itemPath>
-        <itemPath>Parameter.h</itemPath>
-        <itemPath>Patch.h</itemPath>
       </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
@@ -44,7 +44,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <logicalFolder name="f3" displayName="Effects" projectFiles="true">
+      <logicalFolder name="f1" displayName="Effects" projectFiles="true">
         <itemPath>BiquadFilter.cpp</itemPath>
         <itemPath>Compressor.cpp</itemPath>
         <itemPath>Delay.cpp</itemPath>
@@ -54,19 +54,19 @@
         <itemPath>Gain.cpp</itemPath>
         <itemPath>IIRFilter.cpp</itemPath>
       </logicalFolder>
-      <logicalFolder name="f1" displayName="Signal Generators" projectFiles="true">
+      <logicalFolder name="f2" displayName="Signal Handlers" projectFiles="true">
+        <itemPath>InputDevice.cpp</itemPath>
+        <itemPath>OutputDevice.cpp</itemPath>
+        <itemPath>Parameter.cpp</itemPath>
+        <itemPath>Patch.cpp</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f3" displayName="Wave Generators" projectFiles="true">
         <itemPath>QuadraticWaveGenerator.cpp</itemPath>
         <itemPath>SawtoothWaveGenerator.cpp</itemPath>
         <itemPath>SineWaveGenerator.cpp</itemPath>
         <itemPath>SquareWaveGenerator.cpp</itemPath>
         <itemPath>TriangleWaveGenerator.cpp</itemPath>
         <itemPath>sineTable.cpp</itemPath>
-      </logicalFolder>
-      <logicalFolder name="f2" displayName="Signal Handlers" projectFiles="true">
-        <itemPath>InputDevice.cpp</itemPath>
-        <itemPath>OutputDevice.cpp</itemPath>
-        <itemPath>Parameter.cpp</itemPath>
-        <itemPath>Patch.cpp</itemPath>
       </logicalFolder>
       <itemPath>driver.cpp</itemPath>
     </logicalFolder>
@@ -82,9 +82,6 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
   </logicalFolder>
-  <sourceRootList>
-    <Elem>.</Elem>
-  </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="Debug" type="1">
@@ -94,11 +91,6 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
-        <ccTool>
-          <incDir>
-            <pElem>.</pElem>
-          </incDir>
-        </ccTool>
       </compileType>
       <item path="BiquadFilter.cpp" ex="false" tool="1" flavor2="0">
       </item>

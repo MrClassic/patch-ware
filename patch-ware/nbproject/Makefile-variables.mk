@@ -9,19 +9,19 @@ CND_DISTDIR=dist
 # Debug configuration
 CND_PLATFORM_Debug=GNU-Linux-x86
 CND_ARTIFACT_DIR_Debug=dist/Debug/GNU-Linux-x86
-CND_ARTIFACT_NAME_Debug=audio
-CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux-x86/audio
+CND_ARTIFACT_NAME_Debug=patch-ware
+CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux-x86/patch-ware
 CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux-x86/package
-CND_PACKAGE_NAME_Debug=audio.tar
-CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/audio.tar
+CND_PACKAGE_NAME_Debug=patch-ware.tar
+CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/patch-ware.tar
 # Release configuration
 CND_PLATFORM_Release=GNU-Linux-x86
 CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux-x86
-CND_ARTIFACT_NAME_Release=audio
-CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux-x86/audio
+CND_ARTIFACT_NAME_Release=patch-ware
+CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux-x86/patch-ware
 CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux-x86/package
-CND_PACKAGE_NAME_Release=audio.tar
-CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux-x86/package/audio.tar
+CND_PACKAGE_NAME_Release=patch-ware.tar
+CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux-x86/package/patch-ware.tar
 #
 # include compiler specific variables
 #

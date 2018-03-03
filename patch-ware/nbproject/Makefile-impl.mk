@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Audio
+PROJECTNAME=patch-ware
 
 # Active Configuration
 DEFAULTCONF=Debug
