@@ -21,17 +21,7 @@ Parameter::Parameter(double param){
 
 bool Parameter::setParameter(const double param) {
     if (patched) {
-        LinkedList<double> signals = getInputs();
-        double* pop = signals.pop_front();
-        if (pop == NULL) {
-            this->param = param;
-            signals.clear(true);
-            return true;
-        } else {
-            this->param = *pop;
-            signals.clear(true);
-            return false;
-        }
+        this->param = input();
     } else {
         this->param = param;
         return true;
@@ -43,12 +33,17 @@ void Parameter::disconnect(){
     while(!inputs.isEmpty()){
         Patch *pop = inputs.pop_front();
         if(pop != NULL){
+            this->removeInput(pop);
             pop->getInput()->removeOutput(pop);
             pop->setOutput(NULL);
         }
         //delete pop; don't delete, let the Patch manager delete it
     }
     patched = false;
+}
+
+bool Parameter::isPatched() const{
+    return patched;
 }
 
 //double operators
@@ -151,7 +146,7 @@ Parameter::operator bool() const {
     return param > 0;
 }
 
-Parameter::operator double() const {
+Parameter::operator double() {
     return param;
 }
 
@@ -159,6 +154,7 @@ bool Parameter::addInput(Patch * const patch) {
     if (patched) {
         return false;
     } else {
+        disconnect();
         patched = true;
         return InputDevice::addInput(patch);
     }

@@ -37,7 +37,7 @@ bool Distortion::process(){
         return false;
     }
     threshold.setParameter(threshold);
-    double signal = averageInputs();
+    double signal = input();
     if(signal > 0 && threshold < signal && !bypass){
         output(threshold);
     }

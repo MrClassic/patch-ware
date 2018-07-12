@@ -52,6 +52,7 @@ OBJECTFILES= \
 	${OBJECTDIR}/SineWaveGenerator.o \
 	${OBJECTDIR}/SquareWaveGenerator.o \
 	${OBJECTDIR}/TriangleWaveGenerator.o \
+	${OBJECTDIR}/ZeroWaveGenerator.o \
 	${OBJECTDIR}/driver.o \
 	${OBJECTDIR}/sineTable.o
 
@@ -164,6 +165,11 @@ ${OBJECTDIR}/TriangleWaveGenerator.o: TriangleWaveGenerator.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
 	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/TriangleWaveGenerator.o TriangleWaveGenerator.cpp
+
+${OBJECTDIR}/ZeroWaveGenerator.o: ZeroWaveGenerator.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} "$@.d"
+	$(COMPILE.cc) -g -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/ZeroWaveGenerator.o ZeroWaveGenerator.cpp
 
 ${OBJECTDIR}/driver.o: driver.cpp 
 	${MKDIR} -p ${OBJECTDIR}

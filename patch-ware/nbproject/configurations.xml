@@ -19,6 +19,7 @@
         <itemPath>Gain.h</itemPath>
         <itemPath>IIRFilter.h</itemPath>
         <itemPath>InvertDistortion.h</itemPath>
+        <itemPath>SignalSpy.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="Signal Handlers" projectFiles="true">
         <itemPath>Controller.h</itemPath>
@@ -34,6 +35,7 @@
         <itemPath>SquareWaveGenerator.h</itemPath>
         <itemPath>TriangleWaveGenerator.h</itemPath>
         <itemPath>WaveGenerator.h</itemPath>
+        <itemPath>ZeroWaveGenerator.h</itemPath>
         <itemPath>sineTable.h</itemPath>
       </logicalFolder>
     </logicalFolder>
@@ -66,6 +68,7 @@
         <itemPath>SineWaveGenerator.cpp</itemPath>
         <itemPath>SquareWaveGenerator.cpp</itemPath>
         <itemPath>TriangleWaveGenerator.cpp</itemPath>
+        <itemPath>ZeroWaveGenerator.cpp</itemPath>
         <itemPath>sineTable.cpp</itemPath>
       </logicalFolder>
       <itemPath>driver.cpp</itemPath>
@@ -158,6 +161,8 @@
       </item>
       <item path="SawtoothWaveGenerator.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="SignalSpy.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="SineWaveGenerator.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="SineWaveGenerator.h" ex="false" tool="3" flavor2="0">
@@ -171,6 +176,10 @@
       <item path="TriangleWaveGenerator.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="WaveGenerator.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ZeroWaveGenerator.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ZeroWaveGenerator.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="driver.cpp" ex="false" tool="1" flavor2="0">
       </item>
@@ -265,6 +274,8 @@
       </item>
       <item path="SawtoothWaveGenerator.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="SignalSpy.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="SineWaveGenerator.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="SineWaveGenerator.h" ex="false" tool="3" flavor2="0">
@@ -278,6 +289,10 @@
       <item path="TriangleWaveGenerator.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="WaveGenerator.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ZeroWaveGenerator.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ZeroWaveGenerator.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="driver.cpp" ex="false" tool="1" flavor2="0">
       </item>

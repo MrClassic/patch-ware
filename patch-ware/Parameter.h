@@ -31,6 +31,8 @@ public:
     
     void disconnect();
     
+    bool isPatched() const;
+    
     //double operators
     Parameter& operator=(const double);
     Parameter& operator+=(const double);
@@ -67,11 +69,13 @@ public:
     
     operator bool() const;
     
-    operator double() const;
+    operator double();
     
     bool addInput(Patch * const patch);
     
     bool removeInput(Patch * const patch);
+    
+    friend class SineWaveGenerator;
     
 private:
     double param;

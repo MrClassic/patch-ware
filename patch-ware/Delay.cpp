@@ -35,7 +35,7 @@ bool Delay::process(){
     if(!*this || (decay.getInputCount() > 0 && !decay.isReady()))
         return false;
     decay.setParameter(decay);
-    double signal = averageInputs();
+    double signal = input();
     double outSignal = signal;
     outSignal += decay * registers.pop();
     registers.push(outSignal);

@@ -39,7 +39,7 @@ bool Gain::process(){
     if(level.getInputCount() > 0 && !level.isReady()){
         return false;
     }
-    double signal = averageInputs();
+    double signal = input();
     level.setParameter(level);
     if(!bypass){
         output(level * signal);

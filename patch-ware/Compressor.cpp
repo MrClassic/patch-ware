@@ -57,7 +57,7 @@ bool Compressor::process(){
     buffer.setParameter(buffer);
     threshold.setParameter(threshold);
     max.setParameter(max);
-    double signal = averageInputs();
+    double signal = input();
     if(bypass){
         output(signal);
     }

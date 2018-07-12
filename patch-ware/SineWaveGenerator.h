@@ -39,6 +39,13 @@ public:
     SineWaveGenerator(const SineWaveGenerator& orig);
     
     /* *********************************************************************
+     * set Frequency:
+     ********************************************************************* */
+    //void setFrequency(double freq);
+    
+    void updateWaveOffset();
+    
+    /* *********************************************************************
      *                          Destructor
      ********************************************************************* */
     
@@ -54,10 +61,12 @@ public:
     /* *********************************************************************
      * Get Double: 
      ********************************************************************* */
-    bool pushDouble() const;
+    bool pushDouble();
     
 private:
-
+    double amplitudeEnvelope;
+    double amplitudeEnvelopeStartVal;
+    double amplitudeEnvelopeStartTime;
 };
 
 #endif	/* SINEWAVEGENERATOR_H */

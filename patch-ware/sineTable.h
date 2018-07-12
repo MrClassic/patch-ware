@@ -15,14 +15,16 @@
 //forward declarations
 double sineD(double angle);
 double sineR(double angle);
+double asineD(double value);
 double cosineD(double angle);
 double cosineR(double angle);
 double tanD(double angle);
 double tanR(double angle);
+double binSearch(double value, const double array[], int lowIndex, int highIndex);
 
-static const double PI = 3.14159265358979323846264338327950288419716939937510582;
-static const int TABLE_SIZE = 24000;
-static const double sineTable[] ={
+const double PI = 3.14159265358979323846264338327950288419716939937510582;
+const int TABLE_SIZE = 24000;
+const double sineTable[] ={
     0.0,
     0.000261799384808574,
     0.000523598751673702,

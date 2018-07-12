@@ -115,6 +115,9 @@ class LinkedList{
         if(isEmpty()){
             return NULL;
         }
+        if(tail == head->next){
+            tail = head;
+        }
         Node *temp = head->next->next;
         T* out = head->next->data;
         delete head->next;

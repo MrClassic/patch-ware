@@ -59,10 +59,14 @@ public:
     /* *********************************************************************
      * Get Double: 
      ********************************************************************* */
-    bool pushDouble() const;
+    bool pushDouble();
+    
+    void updateWaveOffset();
     
 private:
 
+    double waveOutput;
+    bool firstHalf;
 };
 
 #endif	/* SQUAREWAVEGENERATOR_H */

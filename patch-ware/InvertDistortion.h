@@ -24,7 +24,7 @@ public:
         if(!*this || (threshold.getInputCount() > 0 && !threshold.isReady())){
             return false;
         }
-        double signal = averageInputs();
+        double signal = input();
         if(signal > 0. && signal > (double)threshold && !bypass){
             output(threshold - signal + (double)threshold);
         }

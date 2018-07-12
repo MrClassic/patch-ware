@@ -13,11 +13,13 @@
 Patch::Patch(){
     output = NULL;
     input = NULL;
+    ready = false;
 }
 
 Patch::Patch(const Patch& p){
     output = p.output;
     input = p.input;
+    ready = false;
 }
 
 bool Patch::isReady() const{
@@ -38,6 +40,7 @@ bool Patch::pushSignal(const double signal){
     }
     this->signal = signal;
     ready = true;
+    return true;
 }
 
 bool Patch::requestSignal(double& out){
@@ -46,6 +49,7 @@ bool Patch::requestSignal(double& out){
     }
     out = signal;
     ready = false;
+    return true;
 }
 
 void Patch::setOutput(InputDevice* out){

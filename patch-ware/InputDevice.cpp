@@ -97,6 +97,10 @@ InputDevice::operator bool() const {
     return isReady();
 }
 
+void InputDevice::setInputType(input_type in){
+    inputType = in;
+}
+
 /* ****************************************************************
  *                  Protected Section
  **************************************************************** */
@@ -109,6 +113,33 @@ LinkedList<double> InputDevice::getInputs() const {
 
 LinkedList<Patch> InputDevice::getInputPatches() const {
     return inputs;
+}
+
+double InputDevice::input() const{
+    double out = 0.;
+    switch(inputType){
+        
+        case SUM:
+            out = sumInputs();
+        break;
+        
+        case MAX:
+            out = maxInput();
+        break;
+        
+        case MIN:
+            out = minInput();
+        break;
+        
+        case PRODUCT:
+            out = multiplyInputs();
+        break;
+            
+        case AVERAGE:
+        default:
+            out = averageInputs();
+    }
+    return out;
 }
 
 double InputDevice::averageInputs() const {
@@ -128,6 +159,78 @@ double InputDevice::averageInputs() const {
         return 0.;
     }
     return sum / size;
+}
+
+double InputDevice::maxInput() const {
+    LinkedList<double> signals = getInputs();
+    double* pop = signals.pop_front();
+    if(pop == NULL){
+        return 0.;
+    }
+    double largest = *pop;
+    delete pop;
+    pop = NULL;
+    while (!signals.isEmpty()) {
+        pop = signals.pop_front();
+        if(pop != NULL) {
+            if(*pop > largest){
+                largest = *pop;
+            }
+            delete pop;
+        }
+    }
+    return largest;
+}
+
+double InputDevice::minInput() const {
+    LinkedList<double> signals = getInputs();
+    double* pop = signals.pop_front();
+    if(pop == NULL){
+        return 0.;
+    }
+    double smallest = *pop;
+    delete pop;
+    pop = NULL;
+    while (!signals.isEmpty()) {
+        pop = signals.pop_front();
+        if(pop != NULL) {
+            if(*pop < smallest){
+                smallest = *pop;
+            }
+            delete pop;
+        }
+    }
+    return smallest;
+}
+
+double InputDevice::sumInputs() const {
+    LinkedList<double> signals = getInputs();
+    double sum = 0.;
+    while (!signals.isEmpty()) {
+        double* pop = signals.pop_front();
+        if (pop == NULL) {
+            // ...
+        } else {
+            sum += *pop;
+            delete pop;
+        }
+    }
+    return sum;
+}
+
+double InputDevice::multiplyInputs() const {
+    LinkedList<double> signals = getInputs();
+    double total = 1.;
+    while (!signals.isEmpty()) {
+        double* pop = signals.pop_front();
+        if (pop == NULL) {
+            // ...
+        } else {
+            total *= *pop;
+            delete pop;
+        }
+    }
+    return total;
 }
 
 /* ****************************************************************

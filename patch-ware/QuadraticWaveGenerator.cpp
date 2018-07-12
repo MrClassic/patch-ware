@@ -35,17 +35,11 @@ QuadraticWaveGenerator::~QuadraticWaveGenerator() {
     //do nothing...?
 }
 
-bool QuadraticWaveGenerator::pushDouble() const{
-    if(amplitude.getInputCount() > 0 && !amplitude.isReady()){
+bool QuadraticWaveGenerator::pushDouble(){
+    if(!paramsReady()){
         return false;
     }
-    if(phase.getInputCount() > 0 && !phase.isReady()){
-        return false;
-    }
-    if(frequency.getInputCount() > 0 && !frequency.isReady()){
-        return false;
-    }
-    double signal = 2 * (double)amplitude * sqrt(phase + (frequency * currentTime)) - (double)amplitude;
+    double signal = 2 * (double)amplitude * sqrt(frequency * getPhaseOffset()) - (double)amplitude;
     output(signal);
     return true;
 }

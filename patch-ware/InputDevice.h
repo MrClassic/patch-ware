@@ -17,6 +17,15 @@
 #ifndef NULL
 #define NULL 0x0
 #endif
+
+enum input_type {
+    SUM = 0,
+    AVERAGE,
+    PRODUCT,
+    MAX,
+    MIN
+};
+
 class Patch;
 class InputDevice {
     
@@ -48,6 +57,9 @@ public:
     operator bool() const;
     
     
+    
+    void setInputType(input_type in);
+    
  /* ****************************************************************
  *                  Protected Section
  **************************************************************** */
@@ -58,7 +70,7 @@ protected:
     
     LinkedList<Patch> getInputPatches() const;
     
-    double averageInputs() const;
+    double input() const;
     
 private:
     
@@ -66,9 +78,22 @@ private:
     
     static bool getInputsPrivate(Patch* patch, void* arg);
     
+    double averageInputs() const;
+    
+    double maxInput() const;
+    
+    double minInput() const;
+    
+    double sumInputs() const;
+    
+    double multiplyInputs() const;
+    
     LinkedList<Patch> inputs;
     
+    input_type inputType;
+    
 };
+
 
 #endif	/* INPUTDEVICE_H */
 

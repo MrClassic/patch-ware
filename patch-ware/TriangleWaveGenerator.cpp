@@ -31,21 +31,22 @@ TriangleWaveGenerator::~TriangleWaveGenerator() {
     //...do nothing?
 }
 
-bool TriangleWaveGenerator::pushDouble() const{
+bool TriangleWaveGenerator::pushDouble(){
     if(!paramsReady()){
         return false;
     }
     //first spike incline
-    if(currentTime < 1.0 / (frequency * 4.0) + (double)phase){
-        output(amplitude * (currentTime * 4.0 * ((double)frequency) + (double)phase));
+    double offset = getPhaseOffset();
+    if(offset < 1.0 / (frequency * 4.0)){
+        output(offset * ((amplitude * 4.0) * ((double)frequency)));
     }
     //second spike incline
-    else if(currentTime > 3.0 / (frequency * 4.0) + (double)phase){
-        output(amplitude * (currentTime * (frequency * 4.0) - 4.0 * (double)amplitude) + (double)phase);
+    else if(offset > 3.0 / (frequency * 4.0)){
+        output(amplitude * offset * (frequency * 4.0) - 4.0 * (double)amplitude);
     }
     //decline between spikes
     else{
-        output(-1.0 * (double)amplitude * (currentTime * (frequency * 4.0) + 2.0 * (double)amplitude) + (double)phase);
+        output(-1.0 * (double)amplitude * (frequency * 4.0) * offset + 2.0 * (double)amplitude);
     }
     return true;
 }

@@ -62,7 +62,7 @@ bool Filter::process(){
     }
     
     
-    double signal = averageInputs();
+    double signal = input();
     for(int coe = 0; coe <= registers.size(); coe++){
         coefficients[coe].setParameter(coefficients[coe]);
     }
