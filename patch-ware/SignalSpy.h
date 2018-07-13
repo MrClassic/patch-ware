@@ -11,7 +11,7 @@
 #define	SIGNALSPY_H
 
 #include "Effect.h"
-#include "iostream"
+#include <iostream>
 
 class SignalSpy : public Effect{
     

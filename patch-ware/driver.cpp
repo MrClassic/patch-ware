@@ -6,11 +6,11 @@
  *      File Created
  ************************************************************************* */
 
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <linux/kd.h>
+//#include <sys/ioctl.h>
+//#include <unistd.h>
+//#include <linux/kd.h>
 #include <fstream>
-
+#include <string>
 
 #include "FIRFilter.h"
 #include "IIRFilter.h"
@@ -28,19 +28,22 @@
 #include "ZeroWaveGenerator.h"
 #include "SignalSpy.h"
 
-
+/*
 void playSound(){
-    int freq[] = { /* C   D    E    F    G    A    B    C */
+    int freq[] = { // C   D    E    F    G    A    B    C 
                     523, 587, 659, 698, 784, 880, 988, 1046 };
     int i;
-
+	
     for (i=0; i<8; i++)
     {
             ioctl(STDOUT_FILENO, KIOCSOUND, 1193180/freq[i]);
             usleep(500000);
     }
-    ioctl(STDOUT_FILENO, KIOCSOUND, 0); /*Stop silly sound*/
+    ioctl(STDOUT_FILENO, KIOCSOUND, 0); //Stop silly sound
+
 }
+*/
+
 void print(double in){
     std::cout << in;
 }
@@ -261,7 +264,7 @@ void patchDriverCopy(){
     WaveGenerator *boost = new ZeroWaveGenerator(4.00001);
     
     //sine wave generator for signal
-    WaveGenerator *signal = new SineWaveGenerator();
+    WaveGenerator *signal = new SquareWaveGenerator();
     signal->setAmplitude(1.);
     signal->setFrequency(8.0);
     signal->setPhase(0.);
@@ -503,7 +506,7 @@ int main(){
     
     //sineTest();
     
-    patchDriver();
+    patchDriverCopy();
     
     //println("Testing Waves");
     //waveTester();

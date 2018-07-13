@@ -77,6 +77,7 @@ public:
         for (int i = 0; i < _size; i++) {
             data[i] = rhs[i];
         }
+		return *this;
     }
 private:
     int _size;
@@ -161,6 +162,7 @@ public:
         for (int i = 0; i < _size; i++) {
             data[i] = rhs[i];
         }
+		return *this;
     }
 private:
     int _size;

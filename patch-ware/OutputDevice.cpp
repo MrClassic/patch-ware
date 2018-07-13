@@ -84,8 +84,11 @@ LinkedList<Patch> OutputDevice::getOutputPatches() const {
 
 bool OutputDevice::outputToPatches(Patch* patch, void* arg) {
     double* signal = (double*) arg;
-    if (!*patch)
-        patch->pushSignal(*signal);
+	if (!*patch)
+		patch->pushSignal(*signal);
+	else
+		return false;
+	return true;
 }
 
 bool OutputDevice::checkOutputsPrivate(Patch* patch, void* arg) {
