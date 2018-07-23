@@ -163,6 +163,7 @@ public:
             data[i] = rhs[i];
         }
 		return *this;
+
     }
 private:
     int _size;
