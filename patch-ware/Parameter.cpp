@@ -22,6 +22,7 @@ Parameter::Parameter(double param){
 bool Parameter::setParameter(const double param) {
     if (patched) {
         this->param = input();
+		return true;
     } else {
         this->param = param;
         return true;
@@ -168,6 +169,7 @@ bool Parameter::removeInput(Patch * const patch) {
             InputDevice::removeInput(patches.pop_front());
         }
         patched = false;
+		return true;
     } else {
         return false;
     }

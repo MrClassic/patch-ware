@@ -55,8 +55,8 @@ public:
     bool isReady() const;
     
     operator bool() const;
-    
-    
+
+	LinkedList<Patch> getInputPatches() const;
     
     void setInputType(input_type in);
     
@@ -67,8 +67,6 @@ public:
 protected:
     
     LinkedList<double> getInputs() const;
-    
-    LinkedList<Patch> getInputPatches() const;
     
     double input() const;
     

@@ -16,6 +16,9 @@
  *      Implements OutputDevice.
  *      6/30/18
  *      Updated documentation.
+ *		7/28/18
+ *		Made incrementTime(double) virtual for
+ *			inheritance into PulseGenerator
  *          
  ************************************************************************* */
 
@@ -147,7 +150,7 @@ public:
      * Pre-condition:   The time parameter should be initialized.
      * Post-condition:  The current time variable will be updated.
      ********************************************************************* */
-    void incrementTime(const double time){
+    virtual void incrementTime(const double time){
         currentTime += time;
         while(currentTime > (1. / (double)frequency)){
             currentTime -= (1. / (double)frequency);
