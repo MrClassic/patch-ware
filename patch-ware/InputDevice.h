@@ -13,6 +13,7 @@
 
 #include "LinkedList.h"
 #include "Patch.h"
+//#include "Circuit.h"
 
 #ifndef NULL
 #define NULL 0x0
@@ -26,6 +27,7 @@ enum input_type {
     MIN
 };
 
+class Circuit;
 class Patch;
 class InputDevice {
     
@@ -42,11 +44,11 @@ public:
     
     InputDevice(const InputDevice &base);
     
-    virtual ~InputDevice(){};
+	virtual ~InputDevice() {};
     
     virtual bool addInput(Patch * const patch);
     
-    bool removeInput(Patch * const patch);
+    virtual bool removeInput(Patch * const patch);
     
     int getInputCount() const;
     
@@ -56,7 +58,7 @@ public:
     
     operator bool() const;
 
-	LinkedList<Patch> getInputPatches() const;
+	LinkedList<Patch> getInputPatches();
     
     void setInputType(input_type in);
     
@@ -90,6 +92,7 @@ private:
     
     input_type inputType;
     
+	friend Circuit;
 };
 
 

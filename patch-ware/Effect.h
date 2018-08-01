@@ -11,8 +11,8 @@
 #ifndef EFFECT_H
 #define	EFFECT_H
 
-#include "InputDevice.h"
-#include "OutputDevice.h"
+//#include "InputDevice.h"
+//#include "OutputDevice.h"
 #include "Parameter.h"
 
 /* *************************************************************************

@@ -10,7 +10,7 @@
 #ifndef PARAMETER_H
 #define	PARAMETER_H
 
-#include "InputDevice.h"
+#include "Patch.h"
 
 #ifndef NULL
 #define NULL 0x0

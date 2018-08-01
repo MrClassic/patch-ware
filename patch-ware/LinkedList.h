@@ -87,6 +87,57 @@ class LinkedList{
         }
         size = list.getSize();
     }
+
+	//remove the parameter from the list
+	bool remove(T* const data, bool deepRemove = false) {
+		Node* temp = head;
+		while (temp->next != NULL) {
+			if (temp->next->data == data) {
+				Node* remove = temp->next;
+				temp->next = remove->next;
+				if (remove == tail) {
+					tail = temp;
+				}
+				if (deepRemove) {
+					delete remove->data;
+				}
+				delete remove;
+				return true;
+			}
+			temp = temp->next;
+		}
+		return false;
+	}
+
+	//removes all elements from the parameter list from this list.
+	//returns true if any removes were made. False if none were made
+	bool remove(LinkedList<T> &list, bool deepRemove = false) {
+		bool result = false;
+		Node* temp = head;
+		while (temp->next != NULL) {
+			LinkedList<T> copy = list;
+			while (!copy.isEmpty()) {
+				T* pop = copy.pop_front();
+				if (pop == NULL) {
+					continue;
+				}
+				if (temp->next->data == pop) {
+					Node* remove = temp->next;
+					temp->next = remove->next;
+					if (remove == tail) {
+						tail = temp;
+					}
+					if (deepRemove) {
+						delete remove->data;
+					}
+					delete remove;
+					result = true;
+				}
+				temp = temp->next;
+			}
+		}
+		return result;
+	}
     
     //add to the front of the list
     void push_front(T * const data){

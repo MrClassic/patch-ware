@@ -56,12 +56,13 @@ bool InputDevice::removeInput(Patch * const patch) {
     //copy Patches back into inputs
     Patch *pop = copy.pop_front();
     while (pop != NULL) {
-
+		
         if (patch != pop) {
             //not the patch to remove, re-add it back into inputs
             inputs.push_back(pop);
         } else {
             //do not add the patch to "remove," return true
+			pop->setOutput(NULL);
             result = true;
         }
 
@@ -111,7 +112,7 @@ LinkedList<double> InputDevice::getInputs() const {
     return list;
 }
 
-LinkedList<Patch> InputDevice::getInputPatches() const {
+LinkedList<Patch> InputDevice::getInputPatches() {
     return inputs;
 }
 
@@ -209,7 +210,7 @@ double InputDevice::sumInputs() const {
     while (!signals.isEmpty()) {
         double* pop = signals.pop_front();
         if (pop == NULL) {
-            // ...
+            // ...oops, how did that get there?
         } else {
             sum += *pop;
             delete pop;

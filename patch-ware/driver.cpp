@@ -27,6 +27,7 @@
 #include "Gain.h"
 #include "ZeroWaveGenerator.h"
 #include "SignalSpy.h"
+#include "Circuit.h"
 
 /*
 void playSound(){
@@ -502,11 +503,67 @@ void sineTest(){
     }
 }
 
+void circuitTest() {
+
+	//patches for linking into Circuit
+	Patch inLink;
+	Patch outLink;
+
+	//input into circuit, simple sine wave
+	SineWaveGenerator input;
+	input.setAmplitude(1.0);
+	input.setFrequency(2.0);
+	input.setPhase(0.0);
+	input.addOutput(&inLink);	
+
+	//circuit for testing
+	Circuit circuit;
+
+	//******** Circuit internal devices *************
+
+	//Gain
+	Gain *gain = new Gain;
+	gain->setLevel(0.75);
+	circuit.addDevice("gain", gain);
+
+	//Signal Spy
+	std::ofstream file("circuitTestOutput.txt");
+	SignalSpy* spy = new SignalSpy(file);
+	circuit.addDevice("spy", spy);
+
+	//Patch the internals of the circuit
+	circuit.addInput(&inLink);
+	circuit.addOutput(&outLink);
+	circuit.patch("in:0", "gain");
+	circuit.patch("gain", "spy");
+	circuit.patch("spy", "out:0");
+
+	//time simulator
+	const double MAX_TIME = 1.;
+	const double STEP = 0.001;
+	for (double t = 0.0; t < MAX_TIME; t += STEP) {
+
+		input.pushDouble();
+		circuit.process();
+		double signal = 0.;
+		if (!outLink.requestSignal(signal)) {
+			std::cout << "Something bad happened: time = " << t << '\n';
+		}
+		
+		input.incrementTime(STEP);
+	}
+
+	file.close();
+	int stall = 0;
+}
+
 int main(){
     
+	circuitTest();
+
     //sineTest();
     
-    patchDriverCopy();
+    //patchDriverCopy();
     
     //println("Testing Waves");
     //waveTester();

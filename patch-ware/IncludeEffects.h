@@ -1,7 +1,4 @@
-#ifndef INCLUDEFX_H
-#define INCLUDEFX_H
-
-#include "Effect.h"
+/*#include "Effect.h"
 #include "BiquadFilter.h"
 #include "Circuit.h"
 #include "Compressor.h"
@@ -11,6 +8,11 @@
 #include "Gate.h"
 #include "InvertDistortion.h"
 #include "SignalSpy.h"
+
+
+#ifndef INCLUDEFX_H
+#define INCLUDEFX_H
+
 
 enum EFFECTS {
 	BIQUAD_FILTER = 0,
@@ -24,7 +26,7 @@ enum EFFECTS {
 	IIR_FILTER,
 	INVERT_DISTORTION,
 	SIGNAL_SPY,
-	
+
 	//... insert new Effects as they are made
 
 	NUM_OF_EFFECTS
@@ -33,10 +35,10 @@ enum EFFECTS {
 EFFECTS getEffectType(OutputDevice* device) {
 
 	if (dynamic_cast<BiquadFilter*>(device) != NULL) {
-		return BIQUAD_FILTER;
+		return EFFECTS::BIQUAD_FILTER;
 	}
 	if (dynamic_cast<Circuit*>(device) != NULL) {
-		return CIRCUIT;
+		return EFFECTS::CIRCUIT;
 	}
 	if (dynamic_cast<Compressor*>(device) != NULL) {
 		return COMPRESSOR;
@@ -71,3 +73,4 @@ EFFECTS getEffectType(OutputDevice* device) {
 	return NUM_OF_EFFECTS; //error code, not an Effect
 }
 #endif
+*/

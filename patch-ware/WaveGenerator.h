@@ -25,8 +25,9 @@
 #ifndef WAVEGENERATOR_H
 #define	WAVEGENERATOR_H
 
-#include "Patch.h"
 #include "Parameter.h"
+
+class Parameter;
 
 /* **************************************************************************
  * Virtual Class: Wave Generator

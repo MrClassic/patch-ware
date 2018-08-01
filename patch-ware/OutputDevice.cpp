@@ -84,6 +84,13 @@ bool OutputDevice::removeOutput(Patch * const patch) {
 }
 
 /*
+Gets the count of output channels for this OutputDevice
+*/
+int OutputDevice::getOutputCount() const {
+	return outputs.getSize();
+}
+
+/*
 Check Outputs: Checks whether the output patches are ready to accept the next signal.
 If there are any output patches that are not ready, false is returned.
 If all output patches are ready, then true is returned.
@@ -107,7 +114,7 @@ Get Output Patches: Accessor for this Output Device's output Patches
 in the form of a LinkedList. Returns a shallow copy of the output
 patches linked list
 */
-LinkedList<Patch> OutputDevice::getOutputPatches() const {
+LinkedList<Patch> OutputDevice::getOutputPatches() {
     return outputs;
 }
 

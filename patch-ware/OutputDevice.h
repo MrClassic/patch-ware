@@ -13,10 +13,12 @@
 
 #include "LinkedList.h"
 #include "Patch.h"
+//#include "Circuit.h"
 
 #ifndef NULL
 #define NULL 0x0
 #endif
+class Circuit;
 class Patch;
 class OutputDevice{
     
@@ -42,7 +44,7 @@ protected:
     
     void output(const double signal) const;
     
-    LinkedList<Patch> getOutputPatches() const;
+    LinkedList<Patch> getOutputPatches();
     
 private:
     
@@ -51,6 +53,9 @@ private:
     static bool checkOutputsPrivate(Patch* patch, void* arg);
     
     LinkedList<Patch> outputs;
+
+	friend Circuit;
+
 };
 
 #endif	/* OUTPUTDEVICE_H */
