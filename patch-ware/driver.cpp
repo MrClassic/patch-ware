@@ -28,6 +28,7 @@
 #include "ZeroWaveGenerator.h"
 #include "SignalSpy.h"
 #include "Circuit.h"
+#include "PulseGenerator.h"
 
 /*
 void playSound(){
@@ -509,48 +510,75 @@ void circuitTest() {
 	Patch inLink;
 	Patch outLink;
 
-	//input into circuit, simple sine wave
-	SineWaveGenerator input;
-	input.setAmplitude(1.0);
-	input.setFrequency(2.0);
-	input.setPhase(0.0);
-	input.addOutput(&inLink);	
-
+	
 	//circuit for testing
 	Circuit circuit;
 
 	//******** Circuit internal devices *************
 
+	//wave generator to control signal's frequency
+	PulseGenerator pulse;
+	pulse.setAmplitude(1.);
+	pulse.setFrequency(8.);
+	pulse.setPhase(0.);
+	pulse.addOutput(&inLink);
+	/*
+	//signal for the circuit, simple sine wave
+	SquareWaveGenerator* signal = new SquareWaveGenerator;
+	signal->setAmplitude(1.0);
+	signal->setFrequency(2.0);
+	signal->setPhase(0.0);
+	circuit.addDevice("signal", signal);
+
+	//zero wave generator to sum frequency with gain
+	ZeroWaveGenerator* zero = new ZeroWaveGenerator;
+	zero->setAmplitude(7.);
+	circuit.addDevice("zero", zero);
+
 	//Gain
 	Gain *gain = new Gain;
-	gain->setLevel(0.75);
+	gain->setLevel(1.);
+	gain->setInputType(input_type::SUM);
 	circuit.addDevice("gain", gain);
+	*/
+
+	//FIR filter
+	Filter *fir = new FIRFilter;
+	fir->setOrder(5);
+	//set up coefficients
+	
+	for (int i = 0; i < fir->getOrder() + 1; i++) {
+		fir->setCoefficient(1. / fir->getOrder() * i, fir->getOrder() - i);
+	}
+	circuit.addDevice("fir", fir);
 
 	//Signal Spy
-	std::ofstream file("circuitTestOutput.txt");
-	SignalSpy* spy = new SignalSpy(file);
-	circuit.addDevice("spy", spy);
+	std::ofstream file("rawOut.csv");
+	SignalSpy* rawSpy = new SignalSpy(file);
+	circuit.addDevice("rawSpy", rawSpy);
 
 	//Patch the internals of the circuit
 	circuit.addInput(&inLink);
 	circuit.addOutput(&outLink);
-	circuit.patch("in:0", "gain");
-	circuit.patch("gain", "spy");
-	circuit.patch("spy", "out:0");
+	circuit.patch("in:0", "fir");
+	//circuit.patch("zero", "gain");
+	//circuit.patch("gain", "signal:frequency");
+	circuit.patch("fir", "rawSpy");
+	circuit.patch("rawSpy", "out:0");
 
 	//time simulator
 	const double MAX_TIME = 1.;
 	const double STEP = 0.001;
 	for (double t = 0.0; t < MAX_TIME; t += STEP) {
 
-		input.pushDouble();
+		pulse.pushDouble();
 		circuit.process();
 		double signal = 0.;
 		if (!outLink.requestSignal(signal)) {
 			std::cout << "Something bad happened: time = " << t << '\n';
 		}
-		
-		input.incrementTime(STEP);
+		circuit.incrementTime(STEP);
+		pulse.incrementTime(STEP);
 	}
 
 	file.close();

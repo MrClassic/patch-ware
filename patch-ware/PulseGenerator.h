@@ -13,7 +13,7 @@ Log:
 
 #include "WaveGenerator.h"
 
-class PulseGenerator : WaveGenerator {
+class PulseGenerator : public WaveGenerator {
 
 public:
 
@@ -35,6 +35,13 @@ public:
 		}
 		//increment time via standard wave generator
 		WaveGenerator::incrementTime(time);
+	}
+
+	/*
+	Updates the wave offset to ensure the wave stays continuous
+	*/
+	void updateWaveOffset() {
+		currentTime = (frequency * currentTime) / lastFrequency;
 	}
 
 	/*

@@ -155,7 +155,7 @@ bool SineWaveGenerator::pushDouble(){
     double offset = getPhaseOffset();
     
     //send signal to output
-    double in =  360.0 * (frequency * currentTime + offset);
+	double in = 360.0 * (frequency * currentTime +offset);
     double out = sineD(in);
     
     //amplitudeEnvelope = amplitudeEnvelopeStartTime

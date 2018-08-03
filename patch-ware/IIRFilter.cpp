@@ -12,8 +12,8 @@
 #include "IIRFilter.h"
 
 IIRFilter::IIRFilter() {
-    setOrder(0);
-    bypass = true;
+    //setOrder(0);
+    //bypass = true;
 }
 
 IIRFilter::IIRFilter(const IIRFilter& orig) {

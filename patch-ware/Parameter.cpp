@@ -101,8 +101,18 @@ Parameter& Parameter::operator=(const bool rhs){
 }
 
 //Parameter operators
-Parameter& Parameter::operator=(const Parameter &rhs){
-    setParameter(rhs.param);
+Parameter& Parameter::operator=(Parameter &rhs){
+	if (rhs.isPatched()) {
+		LinkedList<Patch> patch = rhs.getInputPatches();
+		Patch* pop = patch.pop_front();
+		if (pop != NULL) {
+			addInput(pop);
+			rhs.removeInput(pop);
+		}
+	}
+	else {
+		setParameter(rhs.param);
+	}
     return *this;
 }
 Parameter& Parameter::operator+=(const Parameter &rhs){

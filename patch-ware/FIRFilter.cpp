@@ -14,8 +14,7 @@
 
 
 FIRFilter::FIRFilter() {
-    setOrder(0);
-    bypass = true;
+	
 }
 
 FIRFilter::FIRFilter(const FIRFilter& orig) {

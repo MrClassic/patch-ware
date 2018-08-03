@@ -198,6 +198,7 @@ bool Circuit::patch(const std::string &output, const std::string &input) {
 
 	}
 
+	patch_master.push_back(patch);
 	changed = true;
 	return true;
 
@@ -816,7 +817,16 @@ bool Circuit::getIODevices(const std::string &output, const std::string &input,
 	if (inputExtension && inputDevice != "out") {
 		if (toWaveGenerator(devices[inputDevice]) != NULL) {
 			if (inputParam == "frequency" || inputParam == "amplitude" || inputParam == "phase") {
-				//continue
+				WaveGenerator* gen = toWaveGenerator(devices[inputDevice]);
+				if (inputParam == "frequency") {
+					i = &gen->getFrequency();
+				}
+				else if (inputParam == "amplitude") {
+					i = &gen->getAmplitude();
+				}
+				else if (inputParam == "phase") {
+					i = &gen->getPhase();
+				}
 			}
 			else {
 				//back out, invalid parameter for a wave generator

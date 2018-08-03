@@ -33,6 +33,8 @@ class Filter : public Effect{
      ****************************************************************** */
 public:
     
+	Filter();
+
     /* ******************************************************************
      * Destructor: Declared virtual to ensure that the implemented derived
      * classes handle their own "clean up"

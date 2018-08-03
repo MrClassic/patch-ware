@@ -52,7 +52,7 @@ public:
     Parameter& operator=(const bool);
     
     //Parameter operators
-    Parameter& operator=(const Parameter &);
+    Parameter& operator=(Parameter &);
     Parameter& operator+=(const Parameter &);
     Parameter& operator-=(const Parameter &);
     

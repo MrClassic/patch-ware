@@ -20,6 +20,17 @@
  *                      Filter implementation
  * 
  *********************************************************************** */
+Filter::Filter() {
+	circular_stack<double> reg(1);
+	registers = reg;
+	registers[0] = 0.;
+	coefficients = new Parameter[2];
+	coefficients[0].disconnect();
+	coefficients[0] = 1.;
+	coefficients[1].disconnect();
+	coefficients[1] = 1.;
+	bypass = false;
+}
 
 Filter::~Filter(){
     delete[] coefficients;
@@ -78,29 +89,49 @@ void Filter::setOrder(int order){
     circular_stack<double>newRegs(order);
     Parameter *newCoes = new Parameter[order + 1];
     
+	/*
+	Debug printing lines*
+	for (int i = 0; i < registers.size() + 1; i++) {
+		std::cout << "coes[" << i << "] = " << (double)coefficients[i];
+		if (coefficients[i].isPatched()) {
+			std::cout << "is patched";
+		}
+		std::cout << "\n";
+	}
+	for (int i = 0; i < order + 1; i++) {
+		std::cout << "new coes[" << i << "] = " << (double)newCoes[i];
+		if (newCoes[i].isPatched()) {
+			std::cout << "is patched";
+		}
+		std::cout << "\n";
+	}//*/
+	
+
     //making registers smaller
     if(order < this->registers.size()){
         
         newCoes[0] = coefficients[0];
         for(int reg = 0; reg < newRegs.size(); reg++){
             newRegs[reg] = registers[reg];
-            newCoes[reg+1] = coefficients[reg+1];
+			newCoes[reg + 1] = coefficients[reg + 1];
         }
         for(int i = order; i < registers.size(); i++){
-            coefficients[i].disconnect();
+            coefficients[i + 1].disconnect();
         }
         
     }
+
     //making registers larger
     else if(order > this->registers.size()){
         
         newCoes[0] = coefficients[0];
         for(int reg = 0; reg < registers.size(); reg++){
             newRegs[reg] = registers[reg];
-            newCoes[reg+1] = coefficients[reg+1];
+			newCoes[reg + 1] = coefficients[reg + 1];
         }
         for(int i = registers.size(); i < order; i++){
-            coefficients[i] = 1.0;
+			newRegs[i] = 0.;
+            newCoes[i + 1].setParameter(1.0);
         }
     }
     //same number of registers, do nothing
@@ -127,7 +158,7 @@ bool Filter::setCoefficient(double coefficient, int reg){
     if(reg < 0 || reg > registers.size()){
         return false;
     }
-    coefficients[reg] = coefficient;
+    coefficients[reg].setParameter(coefficient);
     return true;
 }
 
