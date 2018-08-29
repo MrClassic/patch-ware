@@ -5,6 +5,8 @@
  * Log
  *      5/11/17
  *      File Created
+ *		8/15/18
+ *		implemented Parameterizable interface
  ********************************************************************* */
 
 #ifndef GAIN_H
@@ -16,16 +18,12 @@ class Gain : public Effect{
 public:
     Gain();
     Gain(const Gain& orig);
-    ~Gain();
+    virtual ~Gain();
     
-    Parameter& getLevel();
-    
-    void setLevel(double level);
-    bool process();
+    virtual bool process();
     
 private:
 
-    Parameter level;
 };
 
 #endif	/* GAIN_H */

@@ -5,48 +5,48 @@
  * Log
  *      4/30/17
  *      File Created
+ *		8/16/18
+ *		Happy Birthday Wifey!!!
+ *		implemented Parameterizable interface
  *************************************************************** */
 
 #include "TriangleWaveGenerator.h"
 
 TriangleWaveGenerator::TriangleWaveGenerator() {
-    frequency = 1.0;
-    currentTime = 0.0;
-    amplitude = 1.0;
 }
 
-TriangleWaveGenerator::TriangleWaveGenerator(const double freqency){
-    this->frequency = frequency;
-    currentTime = 0.0;
-    amplitude = 1.0;
+TriangleWaveGenerator::TriangleWaveGenerator(const double frequency){
+    params["frequency"] = frequency;
 }
 
 TriangleWaveGenerator::TriangleWaveGenerator(const TriangleWaveGenerator& orig) {
-    frequency = orig.frequency;
+	copyParameters(orig);
     currentTime = orig.currentTime;
-    amplitude = orig.amplitude;
 }
 
 TriangleWaveGenerator::~TriangleWaveGenerator() {
     //...do nothing?
 }
 
-bool TriangleWaveGenerator::pushDouble(){
-    if(!paramsReady()){
+bool TriangleWaveGenerator::process(){
+    if(!*this){
         return false;
     }
-    //first spike incline
+    
+	//get offset
     double offset = getPhaseOffset();
-    if(offset < 1.0 / (frequency * 4.0)){
-        output(offset * ((amplitude * 4.0) * ((double)frequency)));
+
+	//first spike incline
+    if(offset < 1.0 / (params["frequency"] * 4.0)){
+        output(offset * ((params["amplitude"] * 4.0) * ((double)params["frequency"])));
     }
     //second spike incline
-    else if(offset > 3.0 / (frequency * 4.0)){
-        output(amplitude * offset * (frequency * 4.0) - 4.0 * (double)amplitude);
+    else if(offset > 3.0 / (params["frequency"] * 4.0)){
+        output(params["amplitude"] * offset * (params["frequency"] * 4.0) - 4.0 * (double)params["amplitude"]);
     }
     //decline between spikes
     else{
-        output(-1.0 * (double)amplitude * (frequency * 4.0) * offset + 2.0 * (double)amplitude);
+        output(-1.0 * (double)params["amplitude"] * (params["frequency"] * 4.0) * offset + 2.0 * (double)params["amplitude"]);
     }
     return true;
 }

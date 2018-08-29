@@ -5,6 +5,8 @@
  * Log
  *      5/4/17
  *      File Created
+ *		8/15/18
+ *		implemented Para,eterizable interface
  *********************************************************************** */
 
 
@@ -45,21 +47,15 @@ public:
      *                          Accessors
      ********************************************************************** */
     bool process();
-    Parameter& getThreshold();
-    Parameter& getBuffer();
-    Parameter& getMax();
+    
     
     /* **********************************************************************
      *                          Mutators
      ********************************************************************** */
-    void setThreshold(double threshold);
-    void setBuffer(double buffer);
-    void setMax(double max);
+    
     
 protected:
-    Parameter threshold;   //threshold
-    Parameter buffer;      //buffer zone start
-    Parameter max;         //max output
+    
     
 };
 

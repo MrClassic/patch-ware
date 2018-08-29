@@ -17,14 +17,17 @@ Log:
 		implemented unpatch()
 		abstracted some functionality into getIODevcies()
 		add incrementTime() to support on board wave generators
+		8/17/18
+		implemented Timer/Parameterizable update
 */
 #include "Circuit.h"
 
 Circuit::Circuit() {
-
+	level = 0;
 }
 
 Circuit::Circuit(const Circuit &other) {
+	level = 0;
 	//TODO: this!
 	//deep copy all patches and devices contained by the "other" circuit
 	//including any sub-circuits
@@ -44,21 +47,23 @@ Circuit::~Circuit() {
 	}
 
 	//clean up my internal components
-	firstPatches.clear();
-	lastPatches.clear();
-	patch_master.clear(true);
-	for (std::pair<std::string, OutputDevice*> p : devices) {
+	
+	for (std::pair<std::string, PatchDevice*> p : devices) {
 		delete p.second;
 		p.second = NULL;
 	}
+
+	firstPatches.clear();
+	lastPatches.clear();
+	patch_master.clear(true);
 }
 
-OutputDevice* Circuit::getDevice(const std::string &tag) {
-	if (devices[tag] == NULL) {
-		devices.erase(tag);
+PatchDevice* Circuit::getDevice(const std::string &tag) {
+	auto search = devices.find(tag);
+	if (search == devices.end()) {
 		return NULL;
 	}
-	return devices[tag];
+	return search->second;
 }
 
 bool Circuit::removeDevice(const std::string &tag) {
@@ -81,13 +86,9 @@ bool Circuit::removeDevice(const std::string &tag) {
 //recursively to any on board sub-Circuits
 void Circuit::incrementTime(const double time) {
 	for (auto p : devices) {
-		if (toWaveGenerator(p.second) != NULL) {
-			WaveGenerator* gen = toWaveGenerator(p.second);
-			gen->incrementTime(time);
-		}
-		if (getEffectType(p.second) == CIRCUIT) {
-			Circuit* circuit = dynamic_cast<Circuit*>(p.second);
-			circuit->incrementTime(time);
+		if (toTimer(p.second) != NULL) {
+			Timer* timer = toTimer(p.second);
+			timer->incrementTime(time);
 		}
 	}
 }
@@ -95,8 +96,15 @@ void Circuit::incrementTime(const double time) {
 //attempts to add the device to this circuit with the tag provided.
 //If the tag is already in use, false is returned, else true is returned.
 bool Circuit::addDevice(const std::string &tag, OutputDevice* const device) {
+	if (tag.find(':') != std::string::npos || tag == "in" || tag == "out") {
+		return false;
+	}
 	if (devices[tag] == NULL) {
 		devices[tag] = device;
+		if (toCircuit(device) != NULL) {
+			Circuit *c = toCircuit(device);
+			c->incrementLevel();
+		}
 		return true;
 	}
 	return false;
@@ -136,50 +144,182 @@ bool Circuit::addDevice(const std::string &tag, OutputDevice* const device) {
 // (not made yet... 404 document not found)
 bool Circuit::patch(const std::string &output, const std::string &input) {
 	
-	//the OutputDevice and InputDevice sides of the patch being added
-	OutputDevice* o = NULL;
-	InputDevice* i = NULL;
-
 	//The input and output channels IF the patch being added is in
 	//"firstPatches" or "lastPatches"
 	int iChannel = -1;
 	int oChannel = -1;
 
-	if (!getIODevices(output, input, o, i, oChannel, iChannel)) {
+	std::string* iStrings = NULL;
+	int iSize = parse(input, iStrings);  // <--- creates string[] on heap !!!!!
+
+	std::string* oStrings = NULL;
+	int oSize = parse(output, oStrings); // <--- creates string[] on heap !!!!!
+
+	
+	//valid results from parsing strings
+	if (pw_abs(iSize - oSize) > 1) {
+		//devices too different in scope
+		//i.e. input = "myCircuit:myWaveGen:frequency"
+		//     output = "myEffect"
+		//Patch would cross through circuits
+		
+		QUIT:	// <---------------------------------------------- Label: Quit
+		delete[] oStrings;
+		delete[] iStrings;
 		return false;
 	}
 
-	//valid results from getIODevices()
-	if ((o == NULL && oChannel == -1) || (i == NULL && iChannel == -1) ||
-		(oChannel > getInputCount() - 1) || (iChannel > getOutputCount() - 1)) {
-		//error state, invalid i/o channel
+	//the OutputDevice and InputDevice sides of the patch being added
+	OutputDevice* o = lookupOutputDevice(oStrings, oSize, oChannel);
+	InputDevice* i = lookupInputDevice(iStrings, iSize, iChannel);
+
+	//validate that we're not patching illegally between circuits
+	Circuit *oCircuit = NULL;
+	Circuit* iCircuit = NULL;
+	int oCircDepth = 0;
+	int iCircDepth = 0;
+
+	//temp Circuit pointer "the explorer"
+	Circuit *temp = this;
+
+	//set oCircuit to the deepest circuit described by oStrings
+	while (temp != NULL) {
+		oCircuit = temp;
+		temp = toCircuit(oCircuit->getDevice(oStrings[oCircDepth++]));
+	}
+
+	//reset temp variable
+	temp = this;
+
+	//set iCircuit to the deepest circuit described by iStrings
+	while (temp != NULL) {
+		iCircuit = temp;
+		temp = toCircuit(iCircuit->getDevice(iStrings[iCircDepth++]));
+	}
+
+	//Circuit pointer to point to the circuit that will do the patching internally
+	Circuit* parentCircuit = NULL;
+
+	if (iCircuit->level > oCircuit->level) {
+
+		//look for child circuit
+		bool found = false;
+		for (auto it = oCircuit->devices.begin(); it != oCircuit->devices.end(); ++it) {
+			if (it->second == iCircuit) {
+				found = true;
+				break;
+			}
+		}
+
+		//if not found, cannot patch devices
+		if (!found) {
+			goto QUIT;
+		}
+
+		//OutputDevice's circuit is parent
+		parentCircuit = oCircuit;
+	}
+	else if (oCircuit->level > oCircuit->level) {
+
+		//look for child circuit
+		bool found = false;
+		for (auto it = iCircuit->devices.begin(); it != iCircuit->devices.end(); ++it) {
+			if (it->second == oCircuit) {
+				found = true;
+				break;
+			}
+		}
+
+		//if not found, cannot patch devices
+		if (!found) {
+			goto QUIT;
+		}
+
+		//OutputDevice's circuit is parent
+		parentCircuit = iCircuit;
+	}
+	else {
+
+		//oCircuit and iCircuit on same level.
+
+		//we need to find their parents, then make sure
+		//they have the same parent, and set it as the parent pointer
+
+		Circuit *explorer = this;
+		int depth = -1;
+
+		int iDepth = iSize - 1;
+		if (iChannel >= 0) {
+			iDepth--;
+		}
+
+
+		int oDepth = oSize - 1;
+		if (oChannel >= 0) {
+			oDepth--;
+		}
+
+		while (explorer != NULL) {
+			depth++;
+			parentCircuit = explorer;
+			Circuit* iCirc = toCircuit(parentCircuit->getDevice(iStrings[depth]));
+			if (iCirc == NULL) {
+				break;
+			}
+			explorer = toCircuit(parentCircuit->getDevice(oStrings[depth]));
+			if (explorer == NULL) {
+				break;
+			}
+			
+
+			if (iCirc != explorer) {
+				if (oDepth - 1 == depth && iDepth - 1 == depth)
+					//if two circuits at same level AND they both
+					//represent the deepest 
+					break;
+
+				else
+					//two different circuits, but different device 
+					return false;
+			}
+		}
+
+	}
+	
+	//don't need these any more...
+	delete[] oStrings;
+	delete[] iStrings;
+
+	if (o == NULL || i == NULL) {
+		
 		return false;
 	}
 
 	Patch * patch = new Patch;
 
+	
+
 	//Set the input of the new patch
-	if (o != NULL) {
+	if (oChannel == -1) {
 
 		//not patching to "firstPatches"
 		o->addOutput(patch);
 
 	}
 	else {
-		//patching into "input" channel (firstPatches)
-
+		
 		//make sure there is a slot in the vector for oChannel
-		while (firstPatches.size() < oChannel + 1) {
-			firstPatches.push_back(NULL);
+		while (parentCircuit->firstPatches.size() < oChannel + 1) {
+			parentCircuit->firstPatches.push_back(NULL);
 		}
 
 		patch->setInput(NULL);//input into patch NULL. Input handled explicitly by the Circuit class
-		firstPatches[oChannel] = patch;
+		parentCircuit->firstPatches[oChannel] = patch;
 
 	}
 
 	//Set the output of the new patch
-	if (i != NULL) {
+	if (iChannel == -1) {
 
 		//not patching to "firstPatches"
 		i->addInput(patch);
@@ -189,17 +329,17 @@ bool Circuit::patch(const std::string &output, const std::string &input) {
 		//patching into "output" channel (lastPatches)
 
 		//make sure there is a slot in the vector for oChannel
-		while (lastPatches.size() < iChannel + 1) {
-			lastPatches.push_back(NULL);
+		while (parentCircuit->lastPatches.size() < iChannel + 1) {
+			parentCircuit->lastPatches.push_back(NULL);
 		}
 
 		patch->setOutput(NULL);//input into patch NULL. Input handled explicitly by the Circuit class
-		lastPatches[iChannel] = patch;
+		parentCircuit->lastPatches[iChannel] = patch;
 
 	}
 
-	patch_master.push_back(patch);
-	changed = true;
+	parentCircuit->patch_master.push_back(patch);
+	parentCircuit->changed = true;
 	return true;
 
 }
@@ -208,68 +348,240 @@ bool Circuit::patch(const std::string &output, const std::string &input) {
 //see patch() function description
 bool Circuit::unpatch(const std::string &output, const std::string &input) {
 	
-	//the OutputDevice and InputDevice sides of the patch being removed
-	OutputDevice* o = NULL; 
-	InputDevice* i = NULL; 
 
-	//The input and output channels IF the patch being removed is in
+	//The input and output channels IF the patch being added is in
 	//"firstPatches" or "lastPatches"
-	int iChannel = -1; 
-	int oChannel = -1; 
+	int iChannel = -1;
+	int oChannel = -1;
 
-	if (!getIODevices(output, input, o, i, oChannel, iChannel)) {
+	std::string* iStrings = NULL;
+	int iSize = parse(input, iStrings);  // <--- creates string[] on heap !!!!!
+
+	std::string* oStrings = NULL;
+	int oSize = parse(output, oStrings); // <--- creates string[] on heap !!!!!
+
+
+										 //valid results from parsing strings
+	if (pw_abs(iSize - oSize) > 1) {
+		//devices too different in scope
+		//i.e. input = "myCircuit:myWaveGen:frequency"
+		//     output = "myEffect"
+		//Patch would cross through circuits
+
+	QUIT:	// <---------------------------------------------- Label: Quit
+		delete[] oStrings;
+		delete[] iStrings;
 		return false;
 	}
 
-	//candidate patches to be the one to remove
+	//the OutputDevice and InputDevice sides of the patch being added
+	OutputDevice* o = lookupOutputDevice(oStrings, oSize, oChannel);
+	InputDevice* i = lookupInputDevice(iStrings, iSize, iChannel);
+
+	//validate that we're not patching illegally between circuits
+	Circuit *oCircuit = NULL;
+	Circuit* iCircuit = NULL;
+	int oCircDepth = 0;
+	int iCircDepth = 0;
+
+	//temp Circuit pointer "the explorer"
+	Circuit *temp = this;
+
+	//set oCircuit to the deepest circuit described by oStrings
+	while (temp != NULL) {
+		oCircuit = temp;
+		temp = toCircuit(oCircuit->getDevice(oStrings[oCircDepth++]));
+	}
+
+	//reset temp variable
+	temp = this;
+
+	//set iCircuit to the deepest circuit described by iStrings
+	while (temp != NULL) {
+		iCircuit = temp;
+		temp = toCircuit(iCircuit->getDevice(iStrings[oCircDepth++]));
+	}
+
+	//Circuit pointer to point to the circuit that will do the patching internally
+	Circuit* parentCircuit = NULL;
+
+	if (iCircuit->level > oCircuit->level) {
+
+		//look for child circuit
+		bool found = false;
+		for (auto it = oCircuit->devices.begin(); it != oCircuit->devices.end(); ++it) {
+			if (it->second == iCircuit) {
+				found = true;
+				break;
+			}
+		}
+
+		//if not found, cannot patch devices
+		if (!found) {
+			goto QUIT;
+		}
+
+		//OutputDevice's circuit is parent
+		parentCircuit = oCircuit;
+	}
+	else if (oCircuit->level > oCircuit->level) {
+
+		//look for child circuit
+		bool found = false;
+		for (auto it = iCircuit->devices.begin(); it != iCircuit->devices.end(); ++it) {
+			if (it->second == oCircuit) {
+				found = true;
+				break;
+			}
+		}
+
+		//if not found, cannot patch devices
+		if (!found) {
+			goto QUIT;
+		}
+
+		//OutputDevice's circuit is parent
+		parentCircuit = iCircuit;
+	}
+	else {
+
+		//oCircuit and iCircuit on same level.
+
+		//we need to find their parents, then make sure
+		//they have the same parent, and set it as the parent pointer
+
+		Circuit *explorer = this;
+		int depth = -1;
+
+		int iDepth = iSize - 1;
+		if (iChannel >= 0) {
+			iDepth--;
+		}
+
+
+		int oDepth = oSize - 1;
+		if (oChannel >= 0) {
+			oDepth--;
+		}
+
+		while (explorer != NULL) {
+			depth++;
+			parentCircuit = explorer;
+			Circuit* iCirc = toCircuit(parentCircuit->getDevice(iStrings[depth]));
+			if (iCirc == NULL) {
+				break;
+			}
+			explorer = toCircuit(parentCircuit->getDevice(oStrings[depth]));
+			if (explorer == NULL) {
+				break;
+			}
+
+
+			if (iCirc != explorer) {
+				if (oDepth - 1 == depth && iDepth - 1 == depth)
+					//if two circuits at same level AND they both
+					//represent the deepest 
+					break;
+
+				else
+					//two different circuits, but different device 
+					return false;
+			}
+		}
+
+	}
+
+	//don't need these any more...
+	delete[] oStrings;
+	delete[] iStrings;
+
+	if (o == NULL || i == NULL) {
+
+		return false;
+	}
+
 	LinkedList<Patch> candidates;
 
-	//find the patch to remove, and disconnect it
-
-	if (o != NULL) {
-		//if the patch being removed is associated with an output device,
-		//Store all its patches as "candidate" patches for lookup later (if necissary)
+	//check output device
+	if (oChannel < 0) {
+		//if not an edge patch, add possible patches to candidate list
 		candidates = candidates + o->getOutputPatches();
 	}
 	else {
-		//if removing from "firstPatches," no lookup required, just remove the patch.
+
+		//if edge patch (firstPatches) 
 		if (firstPatches[oChannel] != NULL) {
-			
-			//remove the patch
-			removePatch(firstPatches[oChannel]);
 
-			//set slot to NULL
-			firstPatches[oChannel] = NULL;
+			//test if the patch is described correctly
+			if (firstPatches[oChannel]->getOutput() == i) {
 
-			//the circuit has changed
-			changed = true;
+				//remove the patch
+				removePatch(firstPatches[oChannel]);
 
-			//success (...?)
-			return true;
+				//set slot to NULL
+				firstPatches[oChannel] = NULL;
+
+				if (iChannel > -1) {
+					//lastPatches needs to be updated too
+					lastPatches[iChannel] = NULL;
+				}
+
+				//the circuit has changed
+				changed = true;
+
+				//success (...?)
+				return true;
+			}
+			else {
+				//patch is not described correctly
+				return false;
+			}
+		}
+		else {
+			//there is no patch in that channel
+			return false;
 		}
 	}
 
-
-	if (i != NULL) {
-		//if the patch being removed is associated with an input device,
-		//Store all its patches as "candidate" patches for lookup later
+	//check input device
+	if (iChannel < 0) {
+		//not an edge patch, add possible patches to candidate list
 		candidates = candidates + i->getInputPatches();
 	}
 	else {
-		//if removing from "lastPatches," no lookup required, just remove the patch.
+
+		//if edge patch (lastPatches)
 		if (lastPatches[iChannel] != NULL) {
 
-			//remove the patch
-			removePatch(lastPatches[iChannel]);
+			//test if the patch is described correctly
+			if (lastPatches[iChannel]->getInput() == o) {
 
-			//set slot to NULL
-			lastPatches[iChannel] = NULL;
+				//remove the patch
+				removePatch(lastPatches[iChannel]);
 
-			//the circuit has changed
-			changed = true;
+				//set slot to NULL
+				lastPatches[iChannel] = NULL;
 
-			//success (...?)
-			return true;
+				if (oChannel > -1) {
+					//firstPatches needs to be updated too
+					//(Will never get here)
+					firstPatches[oChannel] = NULL;
+				}
+
+				//the circuit has changed
+				changed = true;
+
+				//success (...?)
+				return true;
+			}
+			else {
+				//patch not described correctly
+				return false;
+			}
+		}
+		else {
+			//no patch in output channel
+			return false;
 		}
 	}
 
@@ -279,21 +591,24 @@ bool Circuit::unpatch(const std::string &output, const std::string &input) {
 
 		//REMEMBER: o is the output device whose output is the input into this patch
 		//and i is the input device whose input is the output of this patch
+		//confusing I know... FML!
 		if (pop != NULL && pop->getInput() == o && pop->getOutput() == i) {
 			//found the patch we're looking for!
 			//remove it, flag the circuit as changed and return true!
 			removePatch(pop);
 			changed = true;
-			return true;
+			return true;// <-- Mission accomplished!
 		}
 	}
 
 	//no patch matched what we were looking for...?
 	//hmmm... somethinf might have gone wrong...
 	return false;
+
 }
 
 void Circuit::optimize() {
+
 	if (!changed) {
 		//no changes, no need to optimize the circuit path.
 		return;
@@ -305,8 +620,8 @@ void Circuit::optimize() {
 		queue.push_back(p);
 	}
 
-	//map to track which Patches have already been visited
-	std::map<Patch*, bool> visited;
+	//map to track which PatcheDevice have already been visited
+	std::map<PatchDevice*, bool> visited;
 
 	//loop until queue is empty (i.e. the whole circuit has been visited)
 	while (!queue.isEmpty()) {
@@ -317,207 +632,56 @@ void Circuit::optimize() {
 		//next pop from the queue
 		Patch* pop = queue.pop_front();
 		if (pop == NULL) {
-			break;
+			continue;
 		}
 
-		//output device associated with the popped Patch
-		OutputDevice* oDevice = pop->getInput();
+		//patch device associated with the popped Patch
+		PatchDevice* device = pop->getInput();
 
-		//check for output device as Effect
-		if (toEffect(oDevice) != NULL) {
+		//if there's no device, continue
+		if (device == NULL) {
+			continue;
+		}
 
-			//handle Effect:
-			//if the Effect has any patched parameters, they need to be
-			//added to the list of InputDevices (iDevices)
-
-			//get Effect type
-			EFFECTS type = getEffectType(oDevice);
-
-			//handle Effect types individually
-			switch (type) {
-
-				// ********************** Biquad Filter ************************
-				case BIQUAD_FILTER:{
-					BiquadFilter * biquad = dynamic_cast<BiquadFilter*>(oDevice);
-					if (biquad == NULL)
-						break;
-					if (biquad->geta0().isPatched()) {
-						//get patches for a0
-						iDevices.push_back(&biquad->geta0());
-					}
-					if (biquad->geta1().isPatched()) {
-						//get patches for a1
-						iDevices.push_back(&biquad->geta1());
-					}
-					if (biquad->geta2().isPatched()) {
-						//get patches for a2
-						iDevices.push_back(&biquad->geta2());
-					}
-					if (biquad->getb0().isPatched()) {
-						//get patches for b0
-						iDevices.push_back(&biquad->getb0());
-					}
-					if (biquad->getb1().isPatched()) {
-						//get patches for b1
-						iDevices.push_back(&biquad->getb1());
-					}
-					if (biquad->getb2().isPatched()) {
-						//get patches for b2
-						iDevices.push_back(&biquad->getb2());
-					}
-					break;
+		//Add any parameters' patches to the queue
+		Parameterizable* p = toParameterizable(device);
+		if (p != NULL) {
+			LinkedList<Parameter> params = p->getParameters();
+			while (!params.isEmpty()) {
+				Parameter* pop = params.pop_front();
+				if (pop == NULL || !pop->isPatched()) {
+					continue;
 				}
-
-				// *********************** Circuit ******************
-				case CIRCUIT: {
-
-					//circuit has no paramters (yet...?)
-
-					break;
-				}
-
-				// ************************ Compressor ************************
-				case COMPRESSOR: {
-					Compressor* compressor = dynamic_cast<Compressor*>(oDevice);
-					if (compressor == NULL) {
-						break;
-					}
-					if (compressor->getThreshold().isPatched()) {
-						//add threshold to input devices
-						iDevices.push_back(&compressor->getThreshold());
-					}
-					if (compressor->getMax().isPatched()) {
-						//add max to input devices
-						iDevices.push_back(&compressor->getMax());
-					}
-					if (compressor->getBuffer().isPatched()) {
-						//add buffer to input devices
-						iDevices.push_back(&compressor->getBuffer());
-					}
-
-					break;
-				}
-
-				// **************************** Delay **************************
-				case DELAY: {
-					Delay* delay = dynamic_cast<Delay*>(oDevice);
-					if (delay == NULL) {
-						break;
-					}
-					if (delay->getDecay().isPatched()) {
-						//add decay parameter to Input devices
-						iDevices.push_back(&delay->getDecay());
-					}
-					break;
-				}
-
-				// ******************* Distortion/Invert Distortion ******************
-				case DISTORTION:
-				case INVERT_DISTORTION: {
-					Distortion* dist = dynamic_cast<Distortion*>(oDevice);
-					if (dist == NULL) {
-						break;
-					}
-					if (dist->getThreshold().isPatched()) {
-						//add threshold as input device
-						iDevices.push_back(&dist->getThreshold());
-					}
-					break;
-				}
-
-				// ********************* Simple Filters *************************
-				case FIR_FILTER:
-				case IIR_FILTER: {
-					Filter* filter = dynamic_cast<Filter*>(oDevice);
-					if (filter == NULL) {
-						break;
-					}
-					int order = filter->getOrder();
-					for (int i = 0; i < order; i++) {
-						if (filter->getCoefficient(i).isPatched()) {
-							//add patches coefficient parameter as input device
-							iDevices.push_back(&filter->getCoefficient(i));
-						}
-					}
-					break;
-				}
-
-				// **************************** Gain *******************************
-				case GAIN: {
-					Gain* gain = dynamic_cast<Gain*>(oDevice);
-					if (gain == NULL) {
-						break;
-					}
-					if (gain->getLevel().isPatched()) {
-						//add gain's level as input device
-						iDevices.push_back(&gain->getLevel());
-					}
-					break;
-				}
-
-				// *************************** Gate ********************************
-				case GATE: {
-					Gate* gate = dynamic_cast<Gate*>(oDevice);
-					if (gate == NULL) {
-						break;
-					}
-					if (gate->getThreshold().isPatched()) {
-						//add threshold as input device
-						iDevices.push_back(&gate->getThreshold());
-					}
-					break;
-				}
-
-				// ************************* Signal Spy ***************************
-				case SIGNAL_SPY: {
-					SignalSpy* spy = dynamic_cast<SignalSpy*>(oDevice);
-					if (spy == NULL) {
-						break;
-					}
-					break;
-				}
-
-				//*************************************************
-				// ...Add more Effects as the library grows!
-				//*************************************************
-
-				default:
-					break;
-
-			}//end switch/case
-
-		}//end Effect handling
-
-		if (toWaveGenerator(oDevice) != NULL) {
-
-			//handle Wave Generator
-			WaveGenerator* gen = dynamic_cast<WaveGenerator*>(oDevice);
-			if (gen != NULL) {
-				if (gen->getAmplitude().isPatched()) {
-					//add Amplitude to input devices
-					iDevices.push_back(&gen->getAmplitude());
-				}
-				if (gen->getFrequency().isPatched()) {
-					//add frequency to input devices
-					iDevices.push_back(&gen->getFrequency());
-				}
-				if (gen->getPhase().isPatched()) {
-					//add phase to input devices
-					iDevices.push_back(&gen->getPhase());
-				}
+				iDevices.push_back(pop);
 			}
 		}
 
-		if (toInputDevice(oDevice) != NULL) {
+		if (toInputDevice(device) != NULL) {
 
 			//hanlde Input Device
-			InputDevice* in = dynamic_cast<InputDevice*>(oDevice);
+			InputDevice* in = toInputDevice(device);
 			if (in != NULL && in->getInputCount() > 0) {
 				iDevices.push_back(in);
 			}
 		}
 
-		//gathered all Input Devices into iDevice!
+		if (visited[device]) {
+
+			//remove the visited patch from the "order" list
+			//so the patch can be put at the front
+			order.remove(device);
+			
+		}
+		else {
+			//set as vistied
+			visited[device] = true;
+		}
+		//add patch to the front of the order list.
+		//front of the list == higher priority when 
+		//running a signal through the circuit.
+		order.push_front(device);
+
+		//gathered all Input Devices into iDevices!
 		
 		//for each found InutDevice, get its input patches and 
 		//add them to the queue for processing.
@@ -538,43 +702,17 @@ void Circuit::optimize() {
 				if (patch == NULL) {
 					continue; //<--- should also never happen
 				}
-
-				if (visited[patch]) {
-
-					//remove the visited patch from the "order" list
-					//so the patch can be put at the front
-					LinkedList<Patch> copy = order;
-					order.clear();
-					while (!copy.isEmpty()) {
-						Patch* transfer = copy.pop_front();
-						if (transfer != NULL) {
-							if (transfer != patch) {
-								order.push_back(transfer);
-							}
-							else {
-								//don't add "transfer" back into list
-								//effectively removing it
-							}
-						}
-					}
-
-				}
-				else {
-
-					//push patch to queue ONLY if this is the first visit
-					queue.push_back(patch);
-
-					//set as vistied
-					visited[patch] = true;
-
-				}
-
-				//add patch to the front of the order list.
-				//front of the list == higher priority when 
-				//running a signal through the circuit.
-				order.push_front(patch);
+				queue.push_back(patch);
 
 			}//end patch loop
+
+			//ignore parameters. they are updated implicitly through
+			//their owners (Parametrerizables)
+			//they are not stored in the order_list
+			if (toParameter(iDevice) != NULL) {
+				continue;
+			}
+
 
 		}//end input device loop
 
@@ -589,42 +727,49 @@ bool Circuit::process() {
 	if (changed) {
 		optimize();
 	}
-
+	
 	if (!checkInputs()) {
 		//inputs not ready
 		return false;
 	}
+	
+	
+	std::vector<Patch*>::iterator it = firstPatches.begin();
+	inputs.apply(getInputs, &it);
 
+	order.apply(processInOrder, NULL);
+
+	it = lastPatches.begin();
+	outputs.apply(sendOutputs, &it);
+	/*
 	//transfer signals from external inputs to "firstPatches"
 	LinkedList<Patch> inputs = getInputPatches();
 	int index = 0;
 	while (!inputs.isEmpty()) {
 		double signal = 0.;
 		inputs.pop_front()->requestSignal(signal);
-		firstPatches[index]->pushSignal(signal);
+		if(index < firstPatches.size())
+			firstPatches[index]->pushSignal(signal);
 		index++;
 	}
+	
 
 	//run circuit processing in order
-	LinkedList<Patch> order_copy = order;
+	LinkedList<PatchDevice> order_copy = order;
 	while (!order_copy.isEmpty()) {
-		Patch *current = order_copy.pop_front();
 
-		//check for the input into the patch being a wave generator
-		OutputDevice* outputDevice = current->getInput();
-		if (toWaveGenerator(outputDevice) != NULL) {
-			WaveGenerator* gen = toWaveGenerator(outputDevice);
-			gen->pushDouble();
-		}
+		PatchDevice *pd = order_copy.pop_front();
 
-		//check for the output of the patch feeding into an Effect
-		InputDevice* inputDevice = current->getOutput();
-		if (toEffect(inputDevice) != NULL) {
-			Effect* effect = toEffect(inputDevice);
-			effect->process();
-		}
+		//PatchDevice* pd = current->getInput();
 
-		//parameter signals are updated implicitly via the Effects or Wave Generator's that own them.
+		//test for Parameter
+		if (toParameter(pd) != NULL)
+			//parameter signals are updated implicitly via 
+			//the Effects or Wave Generator's that own them.
+			continue;
+
+		if (pd != NULL)
+			pd->process();
 
 	}
 
@@ -633,16 +778,16 @@ bool Circuit::process() {
 	for (int i = 0; i < lastPatches.size() && !outputs.isEmpty(); i++) {
 		Patch* output = outputs.pop_front();
 		if (output == NULL) {
-			continue; //hit end of list? ...or rogue NULL pointer in output patches
+			continue; //hit end of list? ...or rogue NULL pointer in output patches???
 		}
-		if (lastPatches[i] != NULL) {
+		if (i < lastPatches.size() && lastPatches[i] != NULL) {
 			double signal = 0.;
 			if (lastPatches[i]->requestSignal(signal)) {
 				output->pushSignal(signal);
 			}
 		}
 	}
-
+	*/
 	//success!!!!
 	return true;
 }
@@ -743,6 +888,12 @@ bool Circuit::removeOutput(Patch * const patch) {
 	return true;
 }
 
+/*
+	Remove Patch:
+	Removes the Patch from this circuit.
+	Takes care of unpatching the input and output devices
+	and deletes the patch from the master list
+*/
 void Circuit::removePatch(Patch * const patch) {
 	if (patch->getInput() != NULL) {
 		patch->getInput()->removeOutput(patch);
@@ -753,374 +904,245 @@ void Circuit::removePatch(Patch * const patch) {
 	patch_master.remove(patch, true);
 }
 
-bool Circuit::getIODevices(const std::string &output, const std::string &input, 
-		OutputDevice* &o, InputDevice* &i, int &oChannel, int &iChannel) {
-
-	//extension indices
-	size_t outIndex = output.find_first_of(':');
-	size_t inIndex = input.find_first_of(':');
-
-	//convert to all lowercase
-	for (char c : input) {
-		if (c >= 'A' && c <= 'Z') {
-			c += 32;
-		}
-	}
-	for (char c : output) {
-		if (c >= 'A' && c <= 'Z') {
-			c += 32;
-		}
-	}
-
-	//input variables
-	std::string inputParam = ""; //input parameter extension (after ':')
-	std::string inputDevice = ""; //inputDevice (before ':')
-	int inputChannel = -1; //possible input channel
-	bool inputExtension = false; //is there an extension present for input device?
-
-								  //output variables
-	std::string outputParam = ""; //output parameter extension 
-	std::string outputDevice = ""; //outputDevice
-	int outputChannel = -1; //possible output channel
-	bool outputExtension = false; //is there an extension present for output device?
-
-								  //extract extensions and set up device names
-	if (inIndex != std::string::npos) {//extract input extension
-		inputExtension = true;
-		inputParam = input.substr(inIndex + 1); //+ 1 to exclude to ':'
-	}
-	inputDevice = input.substr(0, inIndex);
-
-	if (outIndex != std::string::npos) {//extract output extension
-		outputExtension = true;
-		outputParam = output.substr(outIndex + 1);
-	}
-	outputDevice = output.substr(0, outIndex);
-
-	if ((outputDevice == "in" && outIndex == std::string::npos) ||
-		(inputDevice == "out" && inIndex == std::string::npos)) {
-		//either "in" or "out" did not contain channels. Invalid input
-		return false;
-	}
-
-	//check devices existance within this circuit
-	if (outputDevice != "in" && devices[outputDevice] == NULL) {
-		devices.erase(outputDevice);//erase the reference we made by checking for existance
-		return false;
-	}
-	if (inputDevice != "out" && devices[inputDevice] == NULL) {
-		devices.erase(inputDevice);//erase the reference we made by checking for existance
-		return false;
-	}
-
-	//validate input is an InputDevice
-	if (inputExtension && inputDevice != "out") {
-		if (toWaveGenerator(devices[inputDevice]) != NULL) {
-			if (inputParam == "frequency" || inputParam == "amplitude" || inputParam == "phase") {
-				WaveGenerator* gen = toWaveGenerator(devices[inputDevice]);
-				if (inputParam == "frequency") {
-					i = &gen->getFrequency();
-				}
-				else if (inputParam == "amplitude") {
-					i = &gen->getAmplitude();
-				}
-				else if (inputParam == "phase") {
-					i = &gen->getPhase();
-				}
-			}
-			else {
-				//back out, invalid parameter for a wave generator
-				return false;
-			}
-		}
-		else if (toEffect(devices[inputDevice]) != NULL) {
-
-			EFFECTS type = getEffectType(devices[inputDevice]);
-			if (type == NUM_OF_EFFECTS) {
-				return false; //Effect type not found
-			}
-			switch (type) {
-
-				// ***************************** Biquad Filter ******************************
-			case BIQUAD_FILTER:
-				//validate the 'a' or 'b' in parameter extension
-				if (inputParam[0] == 'a' || inputParam[0] == 'b') {
-
-					//parse out 'a' or 'b' first character
-					std::string num = inputParam.substr(1);
-
-					//number behind the 'a' or 'b'
-					int coe = atoi(num.c_str());
-
-					//coe == 0 if atoi failed OR there was a '0' after the 'a' or 'b'
-					if (coe != 0) {
-						BiquadFilter* biquad = dynamic_cast<BiquadFilter*>(devices[inputDevice]);
-						if (inputParam[0] == 'a') {
-							if (coe == 1) {
-								i = &(biquad->geta1());
-							}
-							else if (coe == 2) {
-								i = &(biquad->geta2());
-							}
-						}
-						else {
-							if (coe == 1) {
-								i = &(biquad->getb1());
-							}
-							else if (coe == 2) {
-								i = &(biquad->getb2());
-							}
-						}
-					}
-					else {
-						//if param[0] == '0', atoi "failed" (returned 0) but the parameter is still valid
-						if (inputParam[1] == '0') {
-							//handle coefficient 0
-							BiquadFilter* biquad = dynamic_cast<BiquadFilter*>(devices[inputDevice]);
-							if (inputParam[0] == 'a') {
-								i = &(biquad->geta0());
-							}
-							else {
-								i = &(biquad->getb0());
-							}
-						}
-						else {
-							//not a valid coefficient referenced by the extension
-							return false;
-						}
-					}
-				}
-				else {
-					//first char of extension not 'a' or 'b' means extension
-					//is invalid
-					return false;
-				}
-				break;
-
-				// ************************ Circuit **********************************
-			case CIRCUIT:
-				//no parameters for a circuit
-				return false;
-				break;
-
-				// *************************** Compressor ******************************
-			case COMPRESSOR:
-				if (inputParam == "threshold" || inputParam == "buffer" || inputParam == "max") {
-					Compressor* comp = dynamic_cast<Compressor*>(devices[inputDevice]);
-					if (inputParam == "threshold") {
-						i = &(comp->getThreshold());
-					}
-					else if (inputParam == "buffer") {
-						i = &(comp->getBuffer());
-					}
-					else if (inputParam == "max") {
-						i = &(comp->getMax());
-					}
-				}
-				else {
-					//not a valid parameter
-					return false;
-				}
-				break;
-
-				// ************************ Delay **********************************
-			case DELAY:
-				if (inputParam == "decay") {
-					Delay* delay = dynamic_cast<Delay*>(devices[inputDevice]);
-					i = &(delay->getDecay());
-				}
-				else {
-					//Delay's only valid parameter (right now) is decay
-					return false;
-				}
-				break;
-
-				//************* Distortion and InvertDistortion have the same **********
-				//********************* interface handle together **********************
-			case DISTORTION:
-			case INVERT_DISTORTION:
-				if (inputParam == "threshold") {
-					Distortion* dist = dynamic_cast<Distortion*>(devices[inputDevice]);
-					i = &(dist->getThreshold());
-				}
-				else {
-					//Distrotion's only valid parameter is threshold
-					return false;
-				}
-				break;
-
-				//*********** FIR and IIR filters have the same interface ******************
-				//************************ handle together *********************************
-			case FIR_FILTER:
-			case IIR_FILTER:
-				if (inputParam[0] == '0' || (atoi(inputParam.c_str()) != 0)) {
-					int reg = atoi(inputParam.c_str());
-					Filter* filter = dynamic_cast<Filter*>(devices[inputDevice]);
-					if (reg < filter->getOrder()) {
-						i = &(filter->getCoefficient(reg));
-					}
-					else {
-						//register out of range
-						return false;
-					}
-				}
-				break;
-
-				// ************************** Gain ********************************
-			case GAIN:
-				if (inputParam == "level") {
-					Gain* gain = dynamic_cast<Gain*>(devices[inputDevice]);
-					i = &(gain->getLevel());
-				}
-				else {
-					//level is a Gain's only parameter
-					return false;
-				}
-				break;
-
-				// **************************** Gate *******************************
-			case GATE:
-				if (inputParam == "threshold") {
-					Gate* gate = dynamic_cast<Gate*>(devices[inputDevice]);
-					i = &(gate->getThreshold());
-				}
-				else {
-					//threshold is the only valid parameter for a Gate
-					return false;
-				}
-				break;
-
-				// *************************** Signal Spy ***************************
-			case SIGNAL_SPY:
-				//signal spy has no parameters
-				return false;
-				break;
-
-				//***************************************
-				//... add new Effects as they are made
-				//***************************************
-
-			default:
-				//Effect not found
-				return false;
-			}
-		}
-	}
-	else if (!inputExtension) {
-		//no extension, inputDevice references an actual InputDevice
-		if (toInputDevice(devices[inputDevice]) == NULL) {
-			return false;
-		}
-		i = toInputDevice(devices[inputDevice]);
-	}
-	else {//inputDevice == "out"
-		inputChannel = atoi(inputParam.c_str());
-		if (inputChannel == 0 && inputParam[0] != '0') {
-			//inputParam is NaN
-			return false;
-		}
-		if (inputChannel < 0 || inputChannel > getOutputCount()) {
-			//requested channel is invalid
-			return false;
-		}
-		iChannel = inputChannel; //set referenced iChannel to the input channel
-	}
-
-	if (outputDevice == "in") {
-		outputChannel = atoi(outputParam.c_str());
-		if (outputChannel == 0 && outputParam[0] != '0') {
-			//outputParam is NaN
-			return false;
-		}
-		if (outputChannel < 0 || outputChannel > getInputCount()) {
-			//requested channel is not valid
-			return false;
-		}
-		oChannel = outputChannel; //set the feferenced oChannel to the output channel
-	}
-
-
-	//all checks out
-	Patch* patch = new Patch;
-
-	//set the OutputDevice
-	if (outputDevice != "in") {
-		o = devices[outputDevice];
-	}
-	else {
-		//if "output" == "in", set o = NULL
-		o = NULL;
-	}
-	
-	//if "input" == "out", set i = NULL
-	if (inputDevice == "out") {
-		i = NULL;
-	}
-
-	return true;
-}
-
-InputDevice* Circuit::toInputDevice(OutputDevice* const device) const {
+/*
+	Helper casting methods:
+	Easier and cleaner than writing a bunch of dynamic_casts
+*/
+InputDevice* Circuit::toInputDevice(PatchDevice* const device) const {
 	return dynamic_cast<InputDevice*>(device);
 }
 
-Effect* Circuit::toEffect(OutputDevice* const device) const {
+Effect* Circuit::toEffect(PatchDevice* const device) const {
 	return dynamic_cast<Effect*>(device);
 }
 
-WaveGenerator* Circuit::toWaveGenerator(OutputDevice* const device) const {
+WaveGenerator* Circuit::toWaveGenerator(PatchDevice* const device) const {
 	return dynamic_cast<WaveGenerator*>(device);
 }
 
-OutputDevice* Circuit::toOutputDevice(InputDevice* const device) const {
+OutputDevice* Circuit::toOutputDevice(PatchDevice* const device) const {
 	return dynamic_cast<OutputDevice*>(device);
 }
 
-Effect* Circuit::toEffect(InputDevice* const device) const {
-	return dynamic_cast<Effect*>(device);
+Parameterizable* Circuit::toParameterizable(PatchDevice * const device) const {
+	return dynamic_cast<Parameterizable*>(device);
 }
 
-Parameter* Circuit::toParameter(InputDevice* const device) const {
+Timer* Circuit::toTimer(PatchDevice * const device) const {
+	return dynamic_cast<Timer*>(device);
+}
+
+Circuit* Circuit::toCircuit(PatchDevice * const device) const {
+	return dynamic_cast<Circuit*>(device);
+}
+
+Parameter* Circuit::toParameter(PatchDevice * const device) const {
 	return dynamic_cast<Parameter*>(device);
 }
 
-EFFECTS getEffectType(OutputDevice* device) {
 
-	if (dynamic_cast<BiquadFilter*>(device) != NULL) {
-		return BIQUAD_FILTER;
-	}
-	if (dynamic_cast<Circuit*>(device) != NULL) {
-		return CIRCUIT;
-	}
-	if (dynamic_cast<Compressor*>(device) != NULL) {
-		return COMPRESSOR;
-	}
-	if (dynamic_cast<Delay*>(device) != NULL) {
-		return DELAY;
-	}
-	if (dynamic_cast<Distortion*>(device) != NULL) {
-		return DISTORTION;
-	}
-	if (dynamic_cast<FIRFilter*>(device) != NULL) {
-		return FIR_FILTER;
-	}
-	if (dynamic_cast<Gain*>(device) != NULL) {
-		return GAIN;
-	}
-	if (dynamic_cast<Gate*>(device) != NULL) {
-		return GATE;
-	}
-	if (dynamic_cast<IIRFilter*>(device) != NULL) {
-		return IIR_FILTER;
-	}
-	if (dynamic_cast<InvertDistortion*>(device) != NULL) {
-		return INVERT_DISTORTION;
-	}
-	if (dynamic_cast<SignalSpy*>(device) != NULL) {
-		return SIGNAL_SPY;
+
+int Circuit::parse(const std::string &str, std::string *&out) const {
+
+	//list to hold indices of device seperaters (':')
+	LinkedList<int> indices;
+
+	//find indices of ':'
+	for (int index = 0; index < str.length(); index++) {
+		if (str[index] == ':') {
+			int *i = new int(index);
+			indices.push_back(i);
+		}
 	}
 
-	//... insert new Effects as they are made
+	//filler variable
+	int filler = 0;
 
-	return NUM_OF_EFFECTS; //error code, not an Effect
+	//count of substrings
+	int strings = indices.getSize() + 1;
+
+	//declare space for string array
+	out = new std::string[strings];
+
+	//handle case where there are no devices seperaters
+	if (strings == 1) {
+		out[0] = str;
+		return strings; //(1)
+	}
+
+	//start index for current substring
+	int* start = new int(0);
+
+	//end index for current substring
+	int* end = indices.pop_front();
+
+	//get all substrings
+	while (end != NULL) {
+		out[filler++] = str.substr(*start, *end);
+		delete start;
+		start = end;
+		++(*start);
+		end = indices.pop_front();
+	}
+	out[filler++] = str.substr(*start);
+	delete start;
+
+	//return the size of the array created
+	return strings;
 }
+
+InputDevice* Circuit::lookupInputDevice(std::string *strings, int size, int &inputChannel) {
+
+	//look for output patching
+	if (strings[0] == "out") {
+		if (size == 2) {
+			//attempt to cast string to an int
+			int channel = atoi(strings[1].c_str());
+
+			//if cast returns zero (0), one of two possibilites:
+			//		string is "0" or
+			//		string could not cast to an int
+			//need to test the first char of the string to be sure
+			if (channel == 0 && strings[1][0] != '0') {
+
+				//invalid cast
+				return NULL;
+			}
+
+			//valid cast
+			inputChannel = channel;
+			return this;
+		}
+		return NULL;
+	}
+
+	//try to find the device
+	auto search = devices.find(strings[0]);//store the found device (as iterator)
+	if (search == devices.end()) {
+		return NULL;
+	}
+
+	//if the device is a circuit, and the patch goes into the circuit
+	Circuit* circuit = toCircuit(search->second);
+	if (circuit != NULL && size > 1) {
+		return circuit->lookupInputDevice(&strings[1], size - 1, inputChannel);
+	}
+
+	//first device is not a circuit, and there are 2 devices described.
+	//the second device must be a parameter
+	if (size == 2) {
+
+		//cast first device to parameterizable
+		Parameterizable* p = toParameterizable(search->second);
+
+		if (p == NULL) {
+			//device was not a circuit or a parameterizable object,
+			//then its invalid input
+			return NULL;
+		}
+
+		Parameter* param = NULL;
+
+		//looks for second device as parameter
+		p->getParameter(strings[1], param);
+		return param;
+
+	}
+
+	if (size == 1) {
+
+		//return cast to input device
+		return toInputDevice(search->second);
+
+	}
+
+	//invalid device description or size
+	return NULL;
+}
+
+OutputDevice* Circuit::lookupOutputDevice(std::string *strings, int size, int &outputChannel) {
+
+	//look for input patching
+	if (strings[0] == "in") {
+		if (size == 2) {
+			//attempt to cast string to an int
+			int channel = atoi(strings[1].c_str());
+
+			//if cast returns zero (0), one of two possibilites:
+			//		string is "0" or
+			//		string could not cast to an int
+			//need to test the first char of the string to be sure
+			if (channel == 0 && strings[1][0] != '0') {
+
+				//invalid cast
+				return NULL;
+			}
+
+			//valid cast
+			outputChannel = channel;
+			return this;
+		}
+		return NULL;
+	}
+
+	//try to find the device
+	auto search = devices.find(strings[0]);//store the found device (as iterator)
+	if (search == devices.end()) {
+		return NULL;
+	}
+
+	//if the device is a circuit, and the patch goes into the circuit
+	Circuit* circuit = toCircuit(search->second);
+	if (circuit != NULL && size > 1) {
+		return circuit->lookupOutputDevice(&strings[1], size - 1, outputChannel);
+	}
+
+	//no need to check for parameters since they are inputDevices
+
+	if (size == 1) {
+
+		//return cast to input device
+		return toOutputDevice(search->second);
+
+	}
+
+	//invalid device description or size
+	return NULL;
+}
+
+void Circuit::incrementLevel() {
+	//increment my level
+	level++;
+
+	//recursively incremtn the levels for all sub-circuits
+	for (auto it = devices.begin(); it != devices.end(); ++it) {
+		Circuit *c = toCircuit(it->second);
+		if (c != NULL) {
+			c->incrementLevel();
+		}
+	}
+}
+
+bool Circuit::processInOrder(PatchDevice* pd, void* args) {
+	return pd->process();
+}
+
+bool Circuit::getInputs(Patch* patch, void* args) {
+	std::vector<Patch*>::iterator *it = static_cast<std::vector<Patch*>::iterator *>(args);
+	double signal;
+	patch->requestSignal(signal);
+	(*(*it)++)->pushSignal(signal);
+	//it++->operator*->pushSignal(signal);
+	return true;
+}
+
+bool Circuit::sendOutputs(Patch* patch, void* args) {
+	std::vector<Patch*>::iterator* it = static_cast<std::vector<Patch*>::iterator* >(args);
+	double signal;
+	(*(*it)++)->requestSignal(signal);
+	//it++->operator*->requestSignal(signal);
+	patch->pushSignal(signal);
+	return true;
+}
+
+//EOF

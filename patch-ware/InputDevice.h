@@ -12,6 +12,7 @@
 #define	INPUTDEVICE_H
 
 #include "LinkedList.h"
+#include "PatchDevice.h"
 #include "Patch.h"
 //#include "Circuit.h"
 
@@ -29,7 +30,8 @@ enum input_type {
 
 class Circuit;
 class Patch;
-class InputDevice {
+class PatchDevice;
+class InputDevice : public virtual PatchDevice{
     
 /* ****************************************************************
  *                  Public Section
@@ -72,7 +74,7 @@ protected:
     
     double input() const;
     
-private:
+
     
     static bool checkInputsPrivate(Patch* data, void* arg);
     

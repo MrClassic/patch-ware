@@ -5,46 +5,49 @@
  * Log
  *      5/11/17
  *      File Created
+ *		8/15/18
+ *		implemented Parameterizable interface
  ********************************************************************* */
 
 #include "Gain.h"
-#include "Patch.h"
 
 Gain::Gain() {
-    bypass = false;
-    level = 1.0;
+    params["bypass"] = false;
+    params["level"] = 1.0;
 }
 
 Gain::Gain(const Gain& orig) {
-    bypass = orig.bypass;
-    level = orig.level;
+	copyParameters(orig);
 }
 
 Gain::~Gain() {
     //Do nothing =o)
 }
 
-Parameter& Gain::getLevel(){
-    return level;
-}
-
-void Gain::setLevel(double level){
-    this->level = level;
-}
-
 bool Gain::process(){
-    if(!*this){
+
+	//check for ready state
+	
+    if(!isReady()){
         return false;
     }
-    if(level.getInputCount() > 0 && !level.isReady()){
+    if(!parametersReady()){
         return false;
     }
+	
+	//get input
     double signal = input();
-    level.setParameter(level);
-    if(!bypass){
-        output(level * signal);
+
+	//update parameter
+	updateParameters();
+
+	//calculate and output
+    if(!params["bypass"]){
+        output(params["level"] * signal);
     }else{
         output(signal);
     }
+
+	//success!
     return true;
 }

@@ -9,57 +9,86 @@
  *********************************************************************** */
 
 #include "Delay.h"
-#include "Patch.h"
 
 Delay::Delay() {
-    decay = 0.5;
-    registerSize = 0;
+
+	//set decay parameter
+    params["decay"] = 0.5;
+    
+	//set regen parameter
+	params["regen"] = 1.;
+
+	//set mix parameter
+	params["mix"] = 1.;
+
+	//set registers
     circular_queue<double> temp(1, 0.);
     registers = temp;
-    bypass = false;
+
+	//set bypass
+    params["bypass"] = false;
 }
 
 Delay::Delay(const Delay& orig) {
-    decay = orig.decay;
-    bypass = orig.bypass;
+
+	//copy parameters
+	for (auto it = orig.params.begin(); it != orig.params.end(); ++it) {
+		params[it->first] = (double)it->second;
+	}
+
+	//copy registers
     registers = orig.registers;
 }
 
 Delay::~Delay() {/* Do Nothing */}
 
-Parameter& Delay::getDecay(){
-    return decay;
-}
-
 bool Delay::process(){
-    if(!*this || (decay.getInputCount() > 0 && !decay.isReady()))
+
+	//check inputs and parameters for ready state
+    if(!*this || 
+		(params["decay"].isPatched() && !params["decay"].isReady() ) ||
+		(params["regen"].isPatched() && !params["regen"].isReady() ) )
         return false;
-    decay.setParameter(decay);
+	
+	//update parameters
+    params["decay"].process();
+	params["regen"].process();
+
+	//set memory. If no change, the function backs out
+	setMemory(params["regen"]);
+
+	//get input signal
     double signal = input();
-    double outSignal = signal;
-    outSignal += decay * registers.pop();
+
+	//set default output
+    double outSignal = params["mix"] * signal;
+
+	//mix in stored signal
+    outSignal += params["decay"] * registers.pop();
+
+	//push output signal into memory registers
     registers.push(outSignal);
+
+	//output signal
     output(outSignal);
+
+	//success
     return true;
 }
 
-void Delay::setDecay(double decay){
-    this->decay = decay;
-}
 
 void Delay::setMemory(int blocks){
-    if(blocks == registerSize || blocks < 0){ //not resizing
+    if(blocks == registers.size() || blocks <= 0){ //not resizing
         return;
     }
+
+	//new register set
     circular_queue<double> newRegs(blocks, 0.);
     
-    circular_queue<double>* smaller = NULL;
-    circular_queue<double>* bigger = NULL;
+	//copy over populated registers
+	newRegs << registers;
     
-    for(int i = 0; i < blocks && i < registers.size(); i++){
-        newRegs[i] = registers[i];
-    }
-    
+	//set to new registers
     registers = newRegs;
 }
 

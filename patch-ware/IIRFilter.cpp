@@ -17,14 +17,14 @@ IIRFilter::IIRFilter() {
 }
 
 IIRFilter::IIRFilter(const IIRFilter& orig) {
-    bypass = orig.bypass;
-    registers = orig.registers;
-    
-    //copy coefficients
-    coefficients = new Parameter[registers.size() + 1];
-    for(int i = 0; i <= registers.size(); i++){
-        coefficients[i] = orig.coefficients[i];
-    }
+
+	//copy registers
+	registers = orig.registers;
+
+	//copy Parameters
+	for (auto it = orig.params.begin(); it != orig.params.end(); ++it) {
+		params[it->first] = (double)it->second;
+	}
 }
 
 IIRFilter::~IIRFilter() { }
@@ -32,11 +32,11 @@ IIRFilter::~IIRFilter() { }
 double IIRFilter::pushDouble(double signal){
     
     double out = 0.0;
-    if(!bypass){
-        out += coefficients[0] * signal;
+    if(!params["bypass"]){
+        out += params["0"] * signal;
         //int startIndex = regStart;
         for(int reg = 0; reg < registers.size(); reg++){
-            out += coefficients[reg+1] * registers[reg];
+            out += params[std::to_string(reg+1)] * registers[reg];
         }
         registers.push(out);
     }

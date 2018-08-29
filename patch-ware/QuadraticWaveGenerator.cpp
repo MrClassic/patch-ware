@@ -6,41 +6,40 @@
  *      4/27/17
  *      File Created
  *      Implemented basic features
+ *		8/16/18
+ *		Happy Birthday Wifey!!!
+ *		implemented Parameterizable interface
  ********************************************************************* */
 
 #include "QuadraticWaveGenerator.h"
 
-QuadraticWaveGenerator::QuadraticWaveGenerator() {
-    frequency = 1.0;
-    currentTime = 0.0;
-    amplitude = 1.0;
-    phase = 0.;
-}
+QuadraticWaveGenerator::QuadraticWaveGenerator(){ /* Do Nothing */ }
 
 QuadraticWaveGenerator::QuadraticWaveGenerator(double frequency){
-    this->frequency = frequency;
-    currentTime = 0.0;
-    amplitude = 1.0;
-    phase = 0.;
+	//set frequency
+    params["frequency"] = frequency;
 }
 
 QuadraticWaveGenerator::QuadraticWaveGenerator(const QuadraticWaveGenerator& orig) {
-    frequency = orig.frequency;
-    currentTime = orig.currentTime;
-    amplitude = orig.amplitude;
-    phase = orig.phase;
+	//copy stuff over to new Quadratic Wave Generator
+	currentTime = orig.currentTime;
+	copyParameters(orig);
 }
 
-QuadraticWaveGenerator::~QuadraticWaveGenerator() {
-    //do nothing...?
-}
+QuadraticWaveGenerator::~QuadraticWaveGenerator() { /* do nothing...? */ }
 
-bool QuadraticWaveGenerator::pushDouble(){
-    if(!paramsReady()){
+bool QuadraticWaveGenerator::process(){
+
+	//check parameters
+    if(!*this){
         return false;
     }
-    double signal = 2 * (double)amplitude * sqrt(frequency * getPhaseOffset()) - (double)amplitude;
+
+	//output current wave value
+    double signal = 2 * (double)params["amplitude"] * sqrt(params["frequency"] * getPhaseOffset()) - (double)params["amplitude"];
     output(signal);
+
+	//success
     return true;
 }
 

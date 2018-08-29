@@ -2,38 +2,36 @@
 
 #include "ZeroWaveGenerator.h"
 
-ZeroWaveGenerator::ZeroWaveGenerator(){
-    amplitude = 0.;
-    phase = 0.;
-    frequency = 1.;
-    currentTime = 0;
-}
+ZeroWaveGenerator::ZeroWaveGenerator(){ /* Do Nothing */ }
 
 ZeroWaveGenerator::ZeroWaveGenerator(double amplitude){
-    this->amplitude = amplitude;
-    phase = 0.;
-    frequency = 1.;
-    currentTime = 0;
+    params["amplitude"] = amplitude;
 }
 
 ZeroWaveGenerator::ZeroWaveGenerator(const ZeroWaveGenerator &orig){
-    amplitude = orig.amplitude;
-    phase = orig.phase;
-    frequency = orig.frequency;
+	copyParameters(orig);
     currentTime = orig.currentTime;
 }
 
-ZeroWaveGenerator::~ZeroWaveGenerator(){ }
+ZeroWaveGenerator::~ZeroWaveGenerator(){ /* Do Nothing */ }
 
 void ZeroWaveGenerator::updateWaveOffset(){
     //do nothing, wave has no frequency
 }
 
-bool ZeroWaveGenerator::pushDouble() {
-    if(amplitude.getInputCount() > 0 && !amplitude.isReady()){
+bool ZeroWaveGenerator::process() {
+
+	//only check amplitude because its the only parameter that matters
+	//for a Zero Wave Generator
+    if(params["amplitude"].isPatched() && !params["amplitude"].isReady()){
         return false;
     }
-    output(amplitude);
+
+	//output amplitude. Easy peasy
+    output(params["amplitude"]);
+
+	//success!
     return true;
 }
 
+//EOF

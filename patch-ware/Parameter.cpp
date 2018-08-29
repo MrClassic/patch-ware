@@ -21,6 +21,8 @@ Parameter::Parameter(double param){
 
 bool Parameter::setParameter(const double param) {
     if (patched) {
+		if (!isReady())
+			return false;
         this->param = input();
 		return true;
     } else {
@@ -38,13 +40,23 @@ void Parameter::disconnect(){
             pop->getInput()->removeOutput(pop);
             pop->setOutput(NULL);
         }
-        //delete pop; don't delete, let the Patch manager delete it
+        //delete pop; don't delete, let the Patch manager delete it!
     }
     patched = false;
 }
 
 bool Parameter::isPatched() const{
     return patched;
+}
+
+bool Parameter::process() {
+	if (isPatched()) {
+		if (!isReady()) {
+			return false;
+		}
+		param = input();
+	}
+	return true;
 }
 
 //double operators
@@ -154,10 +166,14 @@ bool Parameter::operator>=(const Parameter &rhs) const {
 }
 
 Parameter::operator bool() const {
-    return param > 0;
+    return param > 0.;
 }
 
-Parameter::operator double() {
+Parameter::operator int() const {
+	return (int)param;
+}
+
+Parameter::operator double() const{
     return param;
 }
 
@@ -181,19 +197,19 @@ bool Parameter::removeInput(Patch * const patch) {
         patched = false;
 		return true;
     } else {
-        return false;
+		return false;
     }
 }
 
 double operator+(const double lhs, const Parameter &rhs){
     return rhs + lhs;
 }
-    double operator-(const double lhs, const Parameter &rhs){
-        return lhs - (double)rhs;
-    }
-    double operator*(const double lhs, const Parameter &rhs){
-        return rhs * lhs;
-    }
-    double operator/(const double lhs, const Parameter &rhs){
-        return lhs / (double)rhs;
-    }
+double operator-(const double lhs, const Parameter &rhs) {
+	return lhs - (double)rhs;
+}
+double operator*(const double lhs, const Parameter &rhs) {
+	return rhs * lhs;
+}
+double operator/(const double lhs, const Parameter &rhs) {
+	return lhs / (double)rhs;
+}

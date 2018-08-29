@@ -21,6 +21,7 @@
  * Purpose: To model a parameter for an effect that is possibly changed
  *          from outside the body of the Effect via a patched signal in.
  ************************************************************************* */
+class InputDevice;
 class Parameter : public InputDevice{
     
 public:
@@ -32,6 +33,8 @@ public:
     void disconnect();
     
     bool isPatched() const;
+
+	bool process();
     
     //double operators
     Parameter& operator=(const double);
@@ -68,8 +71,8 @@ public:
     bool operator>=(const Parameter &) const;
     
     operator bool() const;
-    
-    operator double();
+	operator int() const;
+    operator double() const;
     
     bool addInput(Patch * const patch);
     

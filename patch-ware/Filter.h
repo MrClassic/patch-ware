@@ -116,14 +116,14 @@ public:
     
     void printRegisters(std::ostream &os) const;
     
-    void printCoefficients(std::ostream &os) const;
+    void printCoefficients(std::ostream &os);
     
     /*********************************************************************/
     
 protected:
     
     circular_stack<double> registers;
-    Parameter* coefficients;
+    //Parameter* coefficients;
     
 };
 

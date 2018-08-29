@@ -25,7 +25,9 @@
 #ifndef WAVEGENERATOR_H
 #define	WAVEGENERATOR_H
 
-#include "Parameter.h"
+#include "OutputDevice.h"
+#include "Parameterizable.h"
+#include "Timer.h"
 
 class Parameter;
 
@@ -35,7 +37,9 @@ class Parameter;
  * generator requires a feed of time intervals and a frequency to generate 
  * double values as displacement output to a speaker.
  ************************************************************************* */
-class WaveGenerator : public OutputDevice {
+class OutputDevice;
+class Parameterizable;
+class WaveGenerator : public OutputDevice, public Parameterizable, public Timer{
     
     /* ****************************************************************
      *                  Public Section
@@ -46,7 +50,12 @@ public:
      * Default Constructor
      * Initializes phase corrector and current time to zero (0).
      ******************************************************************** */
-    WaveGenerator(){phaseCorrecter = 0.;currentTime = 0.;}
+    WaveGenerator(){
+		phaseCorrecter = 0.;
+		params["frequency"] = 1.;
+		params["amplitude"] = 1.;
+		params["phase"] = 0.;
+	}
     
     /* **************************************************************
      * Destructor: Enables a WaveGenerator pointer to call it's derived class'
@@ -66,7 +75,7 @@ public:
      * Post-condition:  A double value is returned representing the displacement
      *                  of the wave at its current time.
      ******************************************************************* */
-    virtual bool pushDouble()=0;
+    virtual bool process()=0;
     
     /* *****************************************************************
      * Get Frequency: Accessor for this wave generator's frequency parameter. 
@@ -76,7 +85,7 @@ public:
      * wave generator.
      ****************************************************************** */
     Parameter& getFrequency(){
-        return frequency;
+		return params["frequency"];
     }
     
     /* *****************************************************************
@@ -87,7 +96,7 @@ public:
      * wave generator.
      ****************************************************************** */
     Parameter& getAmplitude(){
-        return amplitude;
+        return params["amplitude"];
     }
     
     /* *****************************************************************
@@ -98,9 +107,25 @@ public:
      * wave generator.
      ****************************************************************** */
     Parameter& getPhase() {
-        return phase;
+        return params["phase"];
     }
-    
+
+	bool setParameter(const std::string &tag, const double value) {
+		if (tag == "frequency") {
+			setFrequency(value);
+		}
+		else if (tag == "phase") {
+			setPhase(value);
+		}
+		else if (tag == "amplitude") {
+			setAmplitude(value);
+		}
+		else {
+			return Parameterizable::setParameter(tag, value);
+		}
+		return true;
+	}
+
     /* *********************************************************************
      * Set Frequency: Sets the Wave Generator's frequency.
      * [NOTE] the frequency is set as CYCLIC FREQUENCY for ease of use.
@@ -111,10 +136,8 @@ public:
      * Post-condition:  The frequency for the Wave Generator will be set.
      ********************************************************************** */
     virtual void setFrequency(const double frequency){
-        double t = currentTime;
-        lastFrequency = (double)(this->frequency); 
-        this->frequency.setParameter(frequency);
-        currentTime = t;
+        lastFrequency = (double)(params["frequency"]); 
+        params["frequency"].setParameter(frequency);
     };
     
     /* *********************************************************************
@@ -127,8 +150,8 @@ public:
      * Post-condition:  The amplitude for the Wave Generator will be set.
      ********************************************************************** */
     virtual void setAmplitude(const double amplitude){
-        lastAmplitude = (double)this->amplitude;
-        this->amplitude.setParameter(amplitude);
+        lastAmplitude = (double)params["amplitude"];
+        params["amplitude"].setParameter(amplitude);
     };
     
     /* ********************************************************************
@@ -141,8 +164,8 @@ public:
      * updated.
      ******************************************************************** */
     virtual void setPhase(const double phase){
-        lastPhase = (double)this->phase;
-        this->phase.setParameter(phase);
+        lastPhase = (double)params["phase"];
+        params["phase"].setParameter(phase);
     };
     
     /* ********************************************************************
@@ -153,11 +176,11 @@ public:
      ********************************************************************* */
     virtual void incrementTime(const double time){
         currentTime += time;
-        while(currentTime > (1. / (double)frequency)){
-            currentTime -= (1. / (double)frequency);
+        while(currentTime > (1. / (double)params["frequency"])){
+            currentTime -= (1. / (double)params["frequency"]);
         }
         while(currentTime < 0){
-            currentTime += (1. / (double)frequency);
+            currentTime += (1. / (double)params["frequency"]);
         }
     }
     
@@ -179,17 +202,17 @@ public:
      ******************************************************************** */
     double getPhaseOffset() {
         
-        if((double)frequency == 0){
-            return 0;
+        if((double)params["frequency"] == 0.){
+            return 0.;
         }
         
         updateWaveOffset();
-        double out = (phase + phaseCorrecter);
-        while(out > (1)){
-            out -= (1);
+        double out = (params["phase"] + phaseCorrecter);
+        while(out > (1.)){
+            out -= (1.);
         }
-        while(out < 0){
-            out += (1);
+        while(out < 0.){
+            out += (1.);
         }
         return out;
     }
@@ -203,19 +226,24 @@ public:
      * Post-condition:  The result is returned, true if all parameters are 
      * ready, false otherwise.
      ******************************************************************** */
-    bool paramsReady() const{
-        if (amplitude.getInputCount() > 0 && !amplitude.isReady()) {
+    bool paramsReady() {
+        if (params["amplitude"].isPatched() && !params["amplitude"].isReady()) {
             return false;
         }
-        if (phase.getInputCount() > 0 && !phase.isReady()) {
+        if (params["phase"].isPatched() && !params["phase"].isReady()) {
             return false;
         }
-        if (frequency.getInputCount() > 0 && !frequency.isReady()) {
+        if (params["frequency"].isPatched() && !params["frequency"].isReady()) {
             return false;
         }
         return true;
     }
     
+	//boolean cast for checking ready state
+	operator bool() {
+		return paramsReady();
+	}
+
     /* ********************************************************************
      *                          Protected Section
      ******************************************************************** */
@@ -224,9 +252,6 @@ protected:
     
     //member variables
     double currentTime; //current time between 0 and frequency
-    Parameter frequency;   //cyclic frequency
-    Parameter amplitude;   //wave amplitude
-    Parameter phase;       //wave phase offest
     double lastFrequency;
     double lastAmplitude;
     double lastPhase;

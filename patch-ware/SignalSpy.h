@@ -7,6 +7,8 @@
  *      File Created
  *		7/15/18
  *		Updated documentation
+ *		8/15/18
+ *		implemented Parameterizable interface
  ************************************************************************ */
 
 #ifndef SIGNALSPY_H
@@ -30,7 +32,6 @@ public:
 	its ostream for signal outputting to the ostream provided.
 	*/
     SignalSpy(std::ostream &out){
-        bypass = false;
         spy = &out;
     }
     
@@ -40,9 +41,7 @@ public:
 	SignalSpy will have no input or output channels initialized.
 	*/
     SignalSpy(const SignalSpy &orig){
-        //InputDevice::InputDevice(orig);
-        //OutputDevice::OutputDevice(orig);
-        bypass = orig.bypass;
+		copyParameters(orig);
         spy = orig.spy;
     }
     
@@ -51,7 +50,7 @@ public:
 	ostream, and outputting the input signal(s) to the output channel(s).
 	*/
     virtual bool process(){
-        if(!*this){
+        if(!isReady()){
             return false;
         }
         LinkedList<Patch> inputPatches = getInputPatches();
@@ -59,14 +58,21 @@ public:
             Patch *pop = inputPatches.pop_front();
             if(pop != NULL){
                 double signal = 0.;
-                if(pop->requestSignal(signal)){;
+				//take signal out of patch
+                if(pop->requestSignal(signal)){
+					//put signal back into patch
                     pop->pushSignal(signal);
+					//send signal to ostream
                     *spy << signal << ", ";
                 }
             } 
         }
         *spy << '\n';
+
+		//send input straight through to output
         output(input());
+
+		//success!
         return true;
     }
     

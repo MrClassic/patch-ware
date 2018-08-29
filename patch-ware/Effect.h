@@ -6,38 +6,39 @@
  *      5/5/17
  *      Happy Cinco de Mayo!
  *      File Created
+ *		8/14/18
+ *		implemented the Parameterizable interface
  ************************************************************************ */
 
 #ifndef EFFECT_H
 #define	EFFECT_H
 
-//#include "InputDevice.h"
-//#include "OutputDevice.h"
-#include "Parameter.h"
+#include "Parameterizable.h"
 
 /* *************************************************************************
  * Class: Effect
  * Purpose: To model a general interface for Effects
  ************************************************************************* */
-class Effect : public InputDevice, public OutputDevice{
+class InputDevice;
+class OutputDevice;
+class Parameterizable;
+class Effect : public InputDevice, public OutputDevice, public Parameterizable{
     
 public:
     
-    //Effect();
+	Effect() { params["bypass"] = false; };
     
-    virtual ~Effect(){bypass = false;}
+    virtual ~Effect(){params["bypass"] = true;}
     
     virtual bool process()=0;
     
-    bool getBypass() const{return bypass;}
+    bool getBypass() {return params["bypass"];}
     
     void setBypass(bool bypass){
-        this->bypass = bypass;
+        params["bypass"] = bypass;
     }
     
-protected:
-    
-    Parameter bypass;
+
 };
 
 #endif	/* EFFECT_H */

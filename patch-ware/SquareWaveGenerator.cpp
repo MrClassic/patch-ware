@@ -8,30 +8,27 @@
  *      Implemented basic features
  *		7/9/18
  *		Adjusted push double method to support changes in amplitude
- *			- two solutions included. see pushDouble()
+ *			- two solutions included. see process()
+ *		8/16/18
+ *		Happy Birthday Wifey!!!
+ *		implemented Parameterizable interface
  ********************************************************************* */
 #include "SquareWaveGenerator.h"
 
 SquareWaveGenerator::SquareWaveGenerator() {
-    frequency = 1.0;
-    currentTime = 0.0;
-    amplitude = 1.0;
     waveOutput = 0.;
     firstHalf = false;
 }
 
 SquareWaveGenerator::SquareWaveGenerator(double frequency) {
-    this->frequency = frequency;
-    currentTime = 0.0;
-    amplitude = 1.0;
+    params["frequency"] = frequency;
     waveOutput = 0.;
     firstHalf = false;
 }
 
 SquareWaveGenerator::SquareWaveGenerator(const SquareWaveGenerator& orig) {
-    frequency = orig.frequency;
+	copyParameters(orig);
     currentTime = orig.currentTime;
-    amplitude = orig.amplitude;
     waveOutput = 0.;
     firstHalf = false;
 }
@@ -42,7 +39,7 @@ SquareWaveGenerator::~SquareWaveGenerator() {
 
 void SquareWaveGenerator::updateWaveOffset() {
     phaseCorrecter = currentTime *
-            (lastFrequency - (double) frequency) + phaseCorrecter;
+            (lastFrequency - (double) params["frequency"]) + phaseCorrecter;
 }
 
 /* ************************************************************************
@@ -57,7 +54,7 @@ void SquareWaveGenerator::updateWaveOffset() {
 * Post-conditions: The next value of the wave being generated will be output
 * to the next (set of) patch(es).
 ************************************************************************** */
-bool SquareWaveGenerator::pushDouble() {
+bool SquareWaveGenerator::process() {
     if (!paramsReady()) {
         return false;
     }
@@ -67,12 +64,12 @@ bool SquareWaveGenerator::pushDouble() {
         int stall = 0;
     }
      * */
-    setFrequency((double) frequency);
-    setAmplitude((double) amplitude);
-    setPhase((double) phase);
+    setFrequency((double) params["frequency"]);
+    setAmplitude((double) params["amplitude"]);
+    setPhase((double) params["phase"]);
 
 	//input into the wave function
-    double in = currentTime * frequency + getPhaseOffset();
+    double in = currentTime * params["frequency"] + getPhaseOffset();
 
     while (in < 0) {
         in += 1.; //********************
@@ -86,10 +83,10 @@ bool SquareWaveGenerator::pushDouble() {
     //amplitude input will shape the wave
     /*
     if( in <  (0.5)) {
-        waveOutput = (double)amplitude;
+        waveOutput = (double)params["amplitude"];
     }
     else{
-        waveOutput = -1 * (double)amplitude;
+        waveOutput = -1 * (double)params["amplitude"];
     }
     */
 
@@ -99,15 +96,17 @@ bool SquareWaveGenerator::pushDouble() {
     
     if (in < 0.5 && !firstHalf) {
         firstHalf = true;
-        waveOutput = (double)amplitude;
+        waveOutput = (double)params["amplitude"];
     }
     if(in >= 0.5 && firstHalf){
         firstHalf = false;
-        waveOutput = (double)amplitude * -1.;
+        waveOutput = (double)params["amplitude"] * -1.;
     }
     
+	//output
     output(waveOutput);
     
+	//success
     return true;
 }
 

@@ -5,6 +5,8 @@
  * Log
  *      5/4/17
  *      File Created
+ *		8/15/18
+ *		implemented Para,eterizable interface
  *********************************************************************** */
 
 #include "Compressor.h"
@@ -19,17 +21,15 @@
  *                              Constructors
  *********************************************************************** */
 Compressor::Compressor() {
-    max = 1.0;
-    threshold = 1.0;
-    buffer = 0.0;
-    bypass = 0.0;
+    params["max"] = 1.0;
+    params["threshold"] = 1.0;
+    params["buffer"] = 0.0;
+    params["bypass"] = 0.0;
 }
 
 Compressor::Compressor(const Compressor& orig) {
-    max = orig.max;
-    threshold = orig.threshold;
-    buffer = orig.buffer;
-    bypass = orig.bypass;
+	//copy over parameters
+	copyParameters(orig);
 }
 
 /* ***********************************************************************
@@ -42,67 +42,55 @@ Compressor::~Compressor() {/* do nothing */}
  *********************************************************************** */
 
 bool Compressor::process(){
+
     //inputs not ready, do nothing
     if(!*this)
         return false;
-    if(buffer.getInputCount() > 0 && !buffer.isReady()){
+    if(params["buffer"].isPatched() && !params["buffer"].isReady()){
         return false;
     }
-    if(threshold.getInputCount() > 0 && !threshold.isReady()){
+    if(params["threshold"].isPatched() && !params["threshold"].isReady()){
         return false;
     }
-    if(max.getInputCount() > 0 && !max.isReady()){
+    if(params["max"].isPatched() && !params["max"].isReady()){
         return false;
     }
-    buffer.setParameter(buffer);
-    threshold.setParameter(threshold);
-    max.setParameter(max);
+
+	//update parameters if they are patched
+    params["buffer"].process();
+    params["threshold"].process();
+    params["max"].process();
+
     double signal = input();
-    if(bypass){
+    if(params["bypass"]){
+		//bypassed? okay, just push the signal through
         output(signal);
+		return true;
     }
+
+	// *** calculate compression ***
+
     bool negative = signal < 0;
     double outSignal = 0.0;
     if(negative){
+		//convert signal to positive for math
         signal *= -1;
     }
-    if(buffer < signal){ //needs compression
-        outSignal = ((signal - buffer) * (threshold - buffer)) / (max - buffer) + buffer;
+    if(params["buffer"] < signal){ //needs compression
+		//calculate compression
+        outSignal = ((signal - params["buffer"]) * (params["threshold"] - params["buffer"])) / (params["max"] - params["buffer"]) + params["buffer"];
     }
     else{ //signal under compression level
+		//do not compress
         outSignal = signal;
     }
     if(negative){
+		//convert back to negative
         outSignal *= -1;
     }
-    output(outSignal * (max / threshold));
+
+	//output
+    output(outSignal * (params["max"]/ params["threshold"]));
     return true;
 }
 
-Parameter& Compressor::getThreshold(){
-    return threshold;
-}
-
-Parameter& Compressor::getBuffer(){
-    return buffer;
-}
-
-Parameter& Compressor::getMax(){
-    return max;
-}
-
-/* ***********************************************************************
- *                              Mutators
- *********************************************************************** */
-
-void Compressor::setThreshold(double threshold){
-    this->threshold = threshold;
-}
-
-void Compressor::setBuffer(double buffer){
-    this->buffer = buffer;
-}
-
-void Compressor::setMax(double max){
-    this->max = max;
-}

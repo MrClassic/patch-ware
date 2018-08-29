@@ -26,7 +26,7 @@ public:
     
     void updateWaveOffset();
     
-    bool pushDouble();
+    bool process();
 };
 
 #endif	/* ZEROWAVEGENERATOR_H */

@@ -19,7 +19,19 @@
 
 template <typename T>
 class LinkedList{
-    public:
+
+private:
+
+	struct Node {
+		Node *next;
+		T *data;
+	};
+
+	Node* head;
+	Node* tail;
+	int size;
+
+public:
     //default constructor    
     LinkedList(){
         head = new Node;
@@ -48,6 +60,7 @@ class LinkedList{
     //shallow delete
     ~LinkedList(){
         clear();
+		delete head;
     }
     
     //clears list. Boolean flag for deleting data pointed to.
@@ -62,14 +75,17 @@ class LinkedList{
             delete n;
             n = NULL;
         }
-        head = NULL;
-        tail = NULL;
+        head = new Node;
+		head->data = NULL;
+		head->next = NULL;
+        tail = head;
     }
     
     //copy list, deepCopy boolean for deep copying
     void copy(const LinkedList &list, bool deepCopy = false){
         if(head != NULL){
             clear();
+			delete head;
         }
         head = new Node;
         head->data = NULL;
@@ -131,6 +147,7 @@ class LinkedList{
 						delete remove->data;
 					}
 					delete remove;
+					size--;
 					result = true;
 				}
 				temp = temp->next;
@@ -243,17 +260,10 @@ class LinkedList{
         return out;
     }
     
-private:
-    struct Node{
-        Node *next;
-        T *data;
-    };
-    
-    Node* head;
-    Node* tail;
-    int size;
+
 };
 
 
 #endif	/* LINKEDLIST_H */
 
+//EOF

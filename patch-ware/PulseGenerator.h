@@ -6,6 +6,8 @@ Log:
 	7/28/18
 		File Created
 		basic implementation implemented
+	8/15/18
+		implemented Parameterizable interface
 */
 
 #ifndef PULSE_H
@@ -30,7 +32,7 @@ public:
 	*/
 	void incrementTime(const double time) {
 		//update pulse boolean if wave repeats (time overflows)
-		if (currentTime + time > (1. / (double)frequency)) {
+		if (currentTime + time > (1. / (double)params["frequency"])) {
 			pulse = true;
 		}
 		//increment time via standard wave generator
@@ -41,14 +43,14 @@ public:
 	Updates the wave offset to ensure the wave stays continuous
 	*/
 	void updateWaveOffset() {
-		currentTime = (frequency * currentTime) / lastFrequency;
+		currentTime = (params["frequency"] * currentTime) / lastFrequency;
 	}
 
 	/*
 	Push Double, sends the amplitude of the wave if the pulse is ready,
 	or 0 if the pulse is not ready.
 	*/
-	bool pushDouble() {
+	bool process() {
 		//check parameters
 		if (!paramsReady()) {
 			return false;
@@ -57,8 +59,8 @@ public:
 		if (pulse) {
 			//pulse ready, output signal for one frame
 			pulse = false;
-			amplitude.setParameter((double)amplitude);
-			output((double)amplitude);
+			params["amplitude"].process();
+			output((double)params["amplitude"]);
 		}
 		else {
 			//output 0 if pulse is not ready

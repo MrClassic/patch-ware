@@ -4,40 +4,51 @@
 
 //patchware includes
 #include "WaveGenerator.h"
-#include "BiquadFilter.h"
-#include "Compressor.h"
-#include "Delay.h"
-#include "Gain.h"
-#include "Gate.h"
-#include "InvertDistortion.h"
-#include "SignalSpy.h"
+#include "Effect.h"
+#include "pwmath.h"
 
 //std includes
 #include <string>
 #include <map>
 #include <vector>
 
-class Circuit : public Effect {
+class InputDevice;
+class OutputDevice;
+class Timer;
+class Effect;
+class WaveGenerator;
+class Patch;
+class PatchDevice;
+class Circuit : public InputDevice, public OutputDevice, public Timer {
 
 
 public:
 
+	//cons and dee
 	Circuit();
 	Circuit(const Circuit &);
 	~Circuit();
 
-	OutputDevice* getDevice(const std::string&);
+	//PatchDevice lookup
+	PatchDevice* getDevice(const std::string&);
 
+	//Timer implementation
+	//updates all sub-timers
 	void incrementTime(const double time);
 
+	//add and remove devices
 	bool addDevice(const std::string&, OutputDevice* const);
 	bool removeDevice(const std::string&);
 	
+	//patch and unpatch devices
 	bool patch(const std::string &output, const std::string &input);
 	bool unpatch(const std::string &output, const std::string &input);
 
+	//optimizes circuit path (called implicitly on process)
 	void optimize();
-	bool process();
+
+	//process circuit inputs and send to outputs
+	virtual bool process();
 
 	//inherited overloads
 	bool removeOutput(Patch * const);
@@ -45,48 +56,45 @@ public:
 
 private:
 
-	InputDevice * toInputDevice(OutputDevice * const) const;
-	WaveGenerator* toWaveGenerator(OutputDevice * const) const;
-	Effect* toEffect(OutputDevice * const) const;
+	//pointer casting functions
+	InputDevice * toInputDevice(PatchDevice * const) const;
+	WaveGenerator* toWaveGenerator(PatchDevice * const) const;
+	OutputDevice * toOutputDevice(PatchDevice * const) const;
+	Effect* toEffect(PatchDevice * const) const;
+	Parameterizable* toParameterizable(PatchDevice* const) const;
+	Timer* toTimer(PatchDevice* const) const;
+	Circuit* toCircuit(PatchDevice * const) const;
+	Parameter* toParameter(PatchDevice * const) const;
 
-	OutputDevice* toOutputDevice(InputDevice * const) const;
-	Effect* toEffect(InputDevice* const) const;
-	Parameter* toParameter(InputDevice* const) const;
-
+	//lookup methods
+	InputDevice* lookupInputDevice(std::string *strings, int size, int& inputChannel);
+	OutputDevice* lookupOutputDevice(std::string *strings, int size, int& outputChannel);
+	
+	//patch removal
 	void removePatch(Patch * const);
-	bool getIODevices(const std::string &, const std::string& , OutputDevice* &, InputDevice* &, int &, int &);
 
-	//private method to pass to LinkedList.apply()
-	//bool processOrder(Patch*, void*);
+	//string parser. parses based on ':'
+	int parse(const std::string &str, std::string *&out) const;
 
-	//variables
+	//increments circuit level recursively
+	void incrementLevel();
+
+	//LinkedList Apply Functions
+	static bool processInOrder(PatchDevice* pd, void* args);
+	static bool getInputs(Patch* patch, void* args);
+	static bool sendOutputs(Patch* patch, void* args);
+
+	//my variables, no touchie!!!
 	bool changed = false;
-	std::map<std::string, OutputDevice*> devices;
+	std::map<std::string, PatchDevice*> devices;
 	LinkedList<Patch> patch_master;
-	LinkedList<Patch> order;
+	LinkedList<PatchDevice> order;
 	std::vector<Patch*> firstPatches;
 	std::vector<Patch*> lastPatches;
+	int level;
+
 };
-
-
-enum EFFECTS {
-	BIQUAD_FILTER = 0,
-	CIRCUIT,
-	COMPRESSOR,
-	DELAY,
-	DISTORTION,
-	FIR_FILTER,
-	GAIN,
-	GATE,
-	IIR_FILTER,
-	INVERT_DISTORTION,
-	SIGNAL_SPY,
-
-	//... insert new Effects as they are made
-
-	NUM_OF_EFFECTS
-};
-
-EFFECTS getEffectType(OutputDevice* device);
 
 #endif
+
+//EOF

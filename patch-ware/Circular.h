@@ -79,6 +79,14 @@ public:
         }
 		return *this;
     }
+
+	circular_stack& operator<<(const circular_stack &rhs) {
+		for (int index = 0; index < _size && index < rhs._size; index++) {
+			data[index] = rhs.data[index];
+		}
+		return *this;
+	}
+
 private:
     int _size;
     T* data;
@@ -165,6 +173,14 @@ public:
 		return *this;
 
     }
+
+	circular_queue& operator<<(const circular_queue &rhs) {
+		for (int index = 0; index < _size && index < rhs._size; index++) {
+			data[index] = rhs.data[index];
+		}
+		return *this;
+	}
+
 private:
     int _size;
     T* data;

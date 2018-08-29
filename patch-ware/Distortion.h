@@ -5,6 +5,8 @@
  * Log
  *      5/5/17
  *      File Created
+ *		8/15/18
+ *		implemented Parameterizable interface
  */
 
 #ifndef DISTORTION_H
@@ -23,14 +25,11 @@ public:
     Distortion(const Distortion& orig);
     ~Distortion();
     
-    Parameter& getThreshold();
     
     virtual bool process();
-    void setThreshold(double threshold);
     
 protected:
     
-    Parameter threshold;
 };
 
 #endif	/* DISTORTION_H */

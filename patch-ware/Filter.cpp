@@ -10,10 +10,7 @@
  *      finished implementing setOrder.
  ********************************************************************** */
 
-#include "Patch.h"
-#include "Circular.h"
 #include "Filter.h"
-
 
 /* ***********************************************************************
  * 
@@ -24,17 +21,13 @@ Filter::Filter() {
 	circular_stack<double> reg(1);
 	registers = reg;
 	registers[0] = 0.;
-	coefficients = new Parameter[2];
-	coefficients[0].disconnect();
-	coefficients[0] = 1.;
-	coefficients[1].disconnect();
-	coefficients[1] = 1.;
-	bypass = false;
+	params[std::to_string(0)] = 1.;
+	params[std::to_string(1)] = 0.;
 }
 
 Filter::~Filter(){
-    delete[] coefficients;
-    coefficients = NULL;
+    //delete[] coefficients;
+    //coefficients = NULL;
 }
 
 /* ***********************************************************************
@@ -46,12 +39,11 @@ int Filter::getOrder() const{
 }
 
 Parameter& Filter::getCoefficient(int reg){
-    if(reg >= registers.size() || reg < 0){
-        return coefficients[0];
-    }
-    else{
-        return coefficients[reg];
-    }
+	std::string asString = std::to_string(reg);
+	if (!hasParameter(asString)) {
+		return params["0"];
+	}
+	return params[asString];
 }
 
 
@@ -61,13 +53,14 @@ Parameter& Filter::getCoefficient(int reg){
 
 bool Filter::process(){
     //check my input channels for ready
-    if(!*this){
+    if(!isReady()){
         return false;
     }
     
     //check my parameters for ready
     for(int coe = 0; coe <= registers.size(); coe++){
-        if(coefficients[coe].getInputCount() > 0 && !coefficients[coe].isReady()){
+		std::string asString = std::to_string(coe);
+        if(params[asString].isPatched() && !params[asString].isReady()){
             return false;
         }
     }
@@ -75,7 +68,7 @@ bool Filter::process(){
     
     double signal = input();
     for(int coe = 0; coe <= registers.size(); coe++){
-        coefficients[coe].setParameter(coefficients[coe]);
+        params[std::to_string(coe)].process();
     }
     
     //output processed signal
@@ -87,36 +80,15 @@ void Filter::setOrder(int order){
     
     //array to copy into
     circular_stack<double>newRegs(order);
-    Parameter *newCoes = new Parameter[order + 1];
-    
-	/*
-	Debug printing lines*
-	for (int i = 0; i < registers.size() + 1; i++) {
-		std::cout << "coes[" << i << "] = " << (double)coefficients[i];
-		if (coefficients[i].isPatched()) {
-			std::cout << "is patched";
-		}
-		std::cout << "\n";
-	}
-	for (int i = 0; i < order + 1; i++) {
-		std::cout << "new coes[" << i << "] = " << (double)newCoes[i];
-		if (newCoes[i].isPatched()) {
-			std::cout << "is patched";
-		}
-		std::cout << "\n";
-	}//*/
-	
-
+   
     //making registers smaller
     if(order < this->registers.size()){
         
-        newCoes[0] = coefficients[0];
         for(int reg = 0; reg < newRegs.size(); reg++){
             newRegs[reg] = registers[reg];
-			newCoes[reg + 1] = coefficients[reg + 1];
         }
         for(int i = order; i < registers.size(); i++){
-            coefficients[i + 1].disconnect();
+			params.erase(std::to_string(i + 1));
         }
         
     }
@@ -124,16 +96,15 @@ void Filter::setOrder(int order){
     //making registers larger
     else if(order > this->registers.size()){
         
-        newCoes[0] = coefficients[0];
         for(int reg = 0; reg < registers.size(); reg++){
             newRegs[reg] = registers[reg];
-			newCoes[reg + 1] = coefficients[reg + 1];
         }
         for(int i = registers.size(); i < order; i++){
 			newRegs[i] = 0.;
-            newCoes[i + 1].setParameter(1.0);
+            params[std::to_string(i + 1)].setParameter(1.0);
         }
     }
+
     //same number of registers, do nothing
     else{
         return;
@@ -142,12 +113,6 @@ void Filter::setOrder(int order){
     //set registers to new array, deallocate old array, set regStart index
     registers = newRegs;
     
-    //set new coefficients array
-    Parameter* deleteMe = coefficients;
-    coefficients = newCoes;
-    newCoes = NULL;
-    delete[] deleteMe;
-    deleteMe = NULL;
 }
 
 bool Filter::setCoefficient(int reg, double coefficient){
@@ -158,13 +123,13 @@ bool Filter::setCoefficient(double coefficient, int reg){
     if(reg < 0 || reg > registers.size()){
         return false;
     }
-    coefficients[reg].setParameter(coefficient);
+    params[std::to_string(reg)].setParameter(coefficient);
     return true;
 }
 
-void Filter::printCoefficients(std::ostream &os) const{
+void Filter::printCoefficients(std::ostream &os){
     for(int coe = 0; coe <= registers.size(); coe++){
-        os << (double&)coefficients[coe] << ' ';
+        os << (double)(params[std::to_string(coe)]) << ' ';
     }
 }
 

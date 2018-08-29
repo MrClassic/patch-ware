@@ -12,15 +12,18 @@
 #define	OUTPUTDEVICE_H
 
 #include "LinkedList.h"
+#include "PatchDevice.h"
 #include "Patch.h"
 //#include "Circuit.h"
 
 #ifndef NULL
 #define NULL 0x0
 #endif
+
 class Circuit;
 class Patch;
-class OutputDevice{
+class PatchDevice;
+class OutputDevice : public virtual PatchDevice{
     
 public:
     

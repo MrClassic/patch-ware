@@ -6,41 +6,38 @@
  *      4/27/17
  *      File Created
  *      implementations for virtually inherited functions
+ *		8/16/18
+ *		Happy Birthday Wifey!!!
+ *		implemented Parameterizable interface
+ *
  *      TO DO:
  *      Add phase shift calculation for changing frequency
  ***************************************************************** */
 
 #include "SawtoothWaveGenerator.h"
 
-SawtoothWaveGenerator::SawtoothWaveGenerator() {
-    frequency = 1.0;
-    currentTime = 0.0;
-    amplitude = 1.0;
-    phase = 0.;
-}
+SawtoothWaveGenerator::SawtoothWaveGenerator() { /* Do Nothing*/ }
 
 SawtoothWaveGenerator::SawtoothWaveGenerator(const double frequency){
-    this->frequency = frequency;
-    currentTime = 0.0;
-    amplitude = 1.0;
-    phase = 0.;
+	params["frequency"] = frequency;
 }
 
 SawtoothWaveGenerator::SawtoothWaveGenerator(const SawtoothWaveGenerator& orig) {
-    frequency = orig.frequency;
-    currentTime = orig.currentTime;
-    amplitude = orig.amplitude;
-    phase = orig.phase;
+	copyParameters(orig);
+	currentTime = orig.currentTime;
 }
 
-SawtoothWaveGenerator::~SawtoothWaveGenerator() {
-    //do nothing...?
-}
+SawtoothWaveGenerator::~SawtoothWaveGenerator() { /* Do nothing */ }
 
-bool SawtoothWaveGenerator::pushDouble(){
-    if(!paramsReady())
+bool SawtoothWaveGenerator::process(){
+	//check parameters
+    if(!*this)
         return false;
-    double signal = amplitude * 2. * getPhaseOffset() / (1. / (double)frequency) - (double)amplitude;
+
+	//calculate and output
+    double signal = params["amplitude"] * 2. * getPhaseOffset() / (1. / (double)params["frequency"]) - (double)params["amplitude"];
     output(signal);
+
+	//success
     return true;
 }

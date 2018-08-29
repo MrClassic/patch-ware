@@ -34,27 +34,13 @@ public:
     
     ~Delay();
     
-    /* **********************************************************************
-     *                          Accessors
-     ********************************************************************** */
-    
-    Parameter& getDecay();
-    
-    /* **********************************************************************
-     *                          Mutators
-     ********************************************************************** */
-    
     bool process();
     
-    void setDecay(double decay);
     
-    void setMemory(int blocks);
     
 protected:
-    
-    int registerSize;
-    Parameter decay;
-    
+	void setMemory(int blocks);
+
     circular_queue<double> registers;
 };
 

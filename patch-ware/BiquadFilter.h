@@ -5,6 +5,8 @@
  * Log 
  *      5/11/17
  *      File Created
+ *		8/15/18
+ *		implemented Parameterizable interface through Effect
  ***************************************************************** */
 
 #include "FIRFilter.h"
@@ -24,26 +26,27 @@ public:
     bool addInput(Patch * const patch);
     virtual bool removeOutput(Patch * const patch);
     bool removeInput(Patch * const patch);
-    
-    void seta0(double coefficient);
-    void seta1(double coefficient);
-    void seta2(double coefficient);
-    void setb0(double coefficient);
-    void setb1(double coefficient);
-    void setb2(double coefficient);
-    
-    Parameter& geta0() const;
-    Parameter& geta1() const;
-    Parameter& geta2() const;
-    Parameter& getb0() const;
-    Parameter& getb1() const;
-    Parameter& getb2() const;
+	
+	// Parameterizable overloaded methods
+	bool virtual setParameter(const std::string &tag, const double value);
+
+	bool getParameter(const std::string &tag, Parameter* &param);
+
+	bool addParameter(const std::string &tag);
+
+	bool hasParameter(const std::string &tag) const;
+
+	LinkedList<Parameter> getParameters();
+
     
 private:
 
     FIRFilter* fir;
     IIRFilter* iir;
     Patch* patch;
+
+	//pointers to onboard filters' parameters
+	std::map<std::string, Parameter*> param_ptrs;
 };
 
 #endif	/* BIQUADFILTER_H */

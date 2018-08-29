@@ -8,7 +8,6 @@
  */
 
 #include "Distortion.h"
-#include "Patch.h"
 
 /* ************************************************************************
  * 
@@ -17,39 +16,45 @@
  ************************************************************************* */
 
 Distortion::Distortion() {
-    threshold = 1.0;
-    bypass = false;
+
+	//set parameters to defaults
+    params["threshold"] = 1.0;
+    params["bypass"] = false;
+
 }
 
 Distortion::Distortion(const Distortion& orig) {
-    threshold = orig.threshold;
-    bypass = orig.bypass;
+	//copy parameters
+	copyParameters(orig);
 }
 
 Distortion::~Distortion() {/* Do nothing */}
 
-Parameter& Distortion::getThreshold(){
-    return threshold;
-}
-
 bool Distortion::process(){
-    if(!*this || (threshold.getInputCount() > 0 && !threshold.isReady())){
+
+	//check for ready state
+    if(!*this || (params["threshold"].isPatched() && !params["threshold"].isReady())){
         return false;
     }
-    threshold.setParameter(threshold);
+
+	//update threshold parameter
+    params["threshold"].process();
+
+	//get input signal
     double signal = input();
-    if(signal > 0 && threshold < signal && !bypass){
-        output(threshold);
+
+	//run distortion algorithm
+    if(signal > 0 && params["threshold"] < signal && !params["bypass"]){
+        output(params["threshold"]);
     }
-    else if(signal < 0 && signal < (threshold * -1.) && !bypass){
-        output((threshold * -1.));
+    else if(signal < 0 && signal < (params["threshold"] * -1.) && !params["bypass"]){
+        output((params["threshold"] * -1.));
     }
     else{
         output(signal);
     }
+
+	//success!
     return true;
 }
 
-void Distortion::setThreshold(double threshold){
-    this->threshold = threshold;
-}
