@@ -64,9 +64,9 @@ public:
     bool process();
     
 private:
-    double amplitudeEnvelope;
-    double amplitudeEnvelopeStartVal;
-    double amplitudeEnvelopeStartTime;
+    //double amplitudeEnvelope;
+    //double amplitudeEnvelopeStartVal;
+    //double amplitudeEnvelopeStartTime;
 };
 
 #endif	/* SINEWAVEGENERATOR_H */

@@ -26,9 +26,9 @@ class Effect : public InputDevice, public OutputDevice, public Parameterizable{
     
 public:
     
-	Effect() { params["bypass"] = false; };
+	Effect() { addParameter("bypass"); params["bypass"] = false; };
     
-    virtual ~Effect(){params["bypass"] = true;}
+    virtual ~Effect(){/*params["bypass"] = true;*/}
     
     virtual bool process()=0;
     

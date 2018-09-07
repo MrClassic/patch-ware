@@ -44,8 +44,11 @@ bool InputDevice::addInput(Patch * const patch) {
 
 bool InputDevice::removeInput(Patch * const patch) {
 
+	return inputs.remove(patch);
+	/*
     //shallow copy inputs
     LinkedList<Patch> copy = inputs;
+	
 
     //result to return, Patch removed: return true
     bool result = false;
@@ -71,6 +74,7 @@ bool InputDevice::removeInput(Patch * const patch) {
     }
 
     return result;
+	*/
 }
 
 int InputDevice::getInputCount() const {
@@ -144,7 +148,7 @@ double InputDevice::input() const{
 }
 
 double InputDevice::averageInputs() const {
-    LinkedList<double> signals = getInputs();
+    LinkedList<double> signals = getInputs(); //<--- creates doubles for list on the heap
     int size = signals.getSize();
     double sum = 0.;
     while (!signals.isEmpty()) {
@@ -153,10 +157,10 @@ double InputDevice::averageInputs() const {
             size--;
         } else {
             sum += *pop;
-            delete pop;
+            delete pop; //<---- free heap memory
         }
     }
-    if(size == 0.){
+    if(size == 0){
         return 0.;
     }
     return sum / size;
@@ -239,7 +243,7 @@ double InputDevice::multiplyInputs() const {
  **************************************************************** */
 
 //O(n)
-
+//Function to pass to LinkedList.apply((bool*)(Patch*, void*), void*)
 bool InputDevice::checkInputsPrivate(Patch* patch, void *arg) {
 
     //if true, keep checking.

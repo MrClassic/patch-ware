@@ -182,8 +182,13 @@ bool Parameter::addInput(Patch * const patch) {
         return false;
     } else {
         disconnect();
-        patched = true;
-        return InputDevice::addInput(patch);
+        
+		if (!InputDevice::addInput(patch)) {
+			return false;
+		}
+		patched = true;
+		return true;
+
     }
 }
 

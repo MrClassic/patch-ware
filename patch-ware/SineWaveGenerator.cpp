@@ -22,8 +22,8 @@
  * value zero (0).
  ********************************************************************* */
 SineWaveGenerator::SineWaveGenerator() {
-    amplitudeEnvelope = 0.;
-    amplitudeEnvelopeStartVal = 0.;
+    //amplitudeEnvelope = 0.;
+    //amplitudeEnvelopeStartVal = 0.;
 }
 
 /** *********************************************************************
@@ -34,8 +34,8 @@ SineWaveGenerator::SineWaveGenerator() {
  ********************************************************************** */
 SineWaveGenerator::SineWaveGenerator(double frequency){
     params["frequency"] = frequency;
-    amplitudeEnvelope = 0.;
-    amplitudeEnvelopeStartVal = 0.;
+    //amplitudeEnvelope = 0.;
+    //amplitudeEnvelopeStartVal = 0.;
 }
 
 /** ************************************************************************
@@ -47,9 +47,9 @@ SineWaveGenerator::SineWaveGenerator(double frequency){
 SineWaveGenerator::SineWaveGenerator(const SineWaveGenerator& orig) {
     currentTime = orig.currentTime;
 	copyParameters(orig);
-	amplitudeEnvelopeStartTime = orig.amplitudeEnvelopeStartTime;
-	amplitudeEnvelope = orig.amplitudeEnvelope;
-    amplitudeEnvelopeStartVal = orig.amplitudeEnvelopeStartVal;
+	//amplitudeEnvelopeStartTime = orig.amplitudeEnvelopeStartTime;
+	//amplitudeEnvelope = orig.amplitudeEnvelope;
+    //amplitudeEnvelopeStartVal = orig.amplitudeEnvelopeStartVal;
 }
 
 /** *************************************************************************
@@ -142,9 +142,7 @@ bool SineWaveGenerator::process(){
     
     //force update on parameters before
     //getting the phase offset
-    setFrequency((double)params["frequency"]);
-    setAmplitude((double)params["amplitude"]);
-    setPhase((double)params["phase"]);
+	updateParameters();
     
     //get phase offset
     double offset = getPhaseOffset();

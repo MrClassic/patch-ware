@@ -7,6 +7,9 @@
 	Log:
 		8/12/18 - N8
 			File Created
+		9/2/18 - N8
+			Added a linked list to reference stored Parameters
+			optimized implementation using LinkedList
 
 */
 #ifndef PARAMETERIZABLE_H
@@ -46,6 +49,8 @@ protected:
 	void copyParameters(const Parameterizable &other);
 
 	std::map<std::string, Parameter> params;
+
+	LinkedList<Parameter> paramsList;
 };
 
 #endif // !PARAMETERIZABLE_H

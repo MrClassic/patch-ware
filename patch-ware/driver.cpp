@@ -670,7 +670,7 @@ struct MyData{
 	unsigned int frameSize;
 	Patch** input;
 	Patch** output;
-	PatchDevice* device;
+	Circuit* device;
 	bool keepGoing;
 };
 
@@ -683,7 +683,7 @@ int call_back(
 		void* userData) {			//my data being passed in
 	//********************************************************
 
-	auto start = std::chrono::system_clock::now();
+	//auto start = std::chrono::system_clock::now();
 
 	//retrieve my data pointer
 	MyData* myData = (MyData*)userData;
@@ -715,11 +715,15 @@ int call_back(
 					std::string message = "Push signal failed. channel: " + std::to_string(channel) + '\n';
 					throw std::exception(message.c_str());
 				}
+				//std::cout << "input[" << index - 1 << "] = " << iBuf[index - 1] << '\n';
 			}
 
 			//process the circuit
 			if (!myData->device->process())
 				throw std::exception("Patch Device could not process");
+
+			//increment time
+			myData->device->incrementTime(1. / (double)myData->frameRate);
 
 			//load output(s) from patches
 			for (int channel = 0; channel < myData->channels; channel++) {
@@ -727,11 +731,11 @@ int call_back(
 					std::string message = "Request signal failed. channel: " + std::to_string(channel) + '\n';
 					throw std::exception(message.c_str());
 				}
+				//std::cout << "output[" << outdex - 1 << "] = " << oBuf[outdex - 1] << '\n';
 			}
 			
 		}
 
-		
 	}
 	catch (std::exception& e) {
 		std::cerr << "Exception caught: " << e.what() << '\n'
@@ -739,10 +743,10 @@ int call_back(
 		return 2;
 	}
 
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> duration = end - start;
+	//auto end = std::chrono::system_clock::now();
+	//std::chrono::duration<double> duration = end - start;
 
-	std::cout << "Processing: " << myData->channels << " channels, " << nFrames << " frames...\n  " << duration.count() << " seconds\n";
+	//std::cout << "Processing: " << myData->channels << " channels, " << nFrames << " frames...\n  " << duration.count() << " seconds\n";
 
 	return 0;
 }
@@ -750,8 +754,8 @@ int call_back(
 void rtAudioTest() {
 
 	//number of channels
-	const unsigned int CHANNELS = 2;
-	unsigned int bufferFrames = 24000;
+	const unsigned int CHANNELS = 1;
+	unsigned int bufferFrames = 512;
 
 	//input patches for interfacing with RT Audio
 	Patch** inputs = new Patch*[CHANNELS];
@@ -760,11 +764,11 @@ void rtAudioTest() {
 	Patch** outputs = new Patch*[CHANNELS];
 
 	//master circuit
-	//Circuit* master = new Circuit;
+	Circuit* master = new Circuit;
 
 	//internal device for master circuit
-	Gain g0;
-	g0.setParameter("level", 1.);
+	//Gain g0;
+	//g0.setParameter("level", 1.);
 	//master->addDevice("g0", g0);
 
 	//Gain *g1 = new Gain;
@@ -772,37 +776,44 @@ void rtAudioTest() {
 	//master->addDevice("g1", g1);
 
 
+
 	//create patches and patch them into master circuit
 	for (int channel = 0; channel < CHANNELS; channel++) {
 		inputs[channel] = new Patch;
 		outputs[channel] = new Patch;
-		g0.addInput(inputs[channel]);
-		g0.addOutput(outputs[channel]);
+		//g0.addInput(inputs[channel]);
+		//g0.addOutput(outputs[channel]);
 
-		//master->addInput(inputs[channel]);
-		//master->addOutput(outputs[channel]);
+		master->addInput(inputs[channel]);
+		master->addOutput(outputs[channel]);
 	}
 
 	
-	//SineWaveGenerator* wave = new SineWaveGenerator;
-	//wave->setAmplitude(1.0);
-	//wave->setFrequency(440.);
-	//wave->setPhase(0.);
+	SineWaveGenerator* wave = new SineWaveGenerator;
+	wave->setAmplitude(1.0);
+	wave->setFrequency(0.5);
+	wave->setPhase(0.);
+	delete wave;
 	//master->addDevice("wave", wave);
 
-	//simple bypass circuit
-	//master->patch("in:0", "g0");
-	//master->patch("in:1", "g1");
-	//master->patch("g0", "out:0");
-	//master->patch("g1", "out:1");
-	//master.patch("wave", "out:1");
+	Effect *dist = new Gain;
+	dist->setBypass(false);
+	dist->setParameter("level", 0.0000000000001);
+	master->addDevice("dist", dist);
 
-	//master->optimize();
+	//simple bypass circuit
+	master->patch("in:0", "dist");
+	//master->patch("in:1", "g1");
+	master->patch("dist", "out:0");
+	//master->patch("g1", "out:1");
+	//master->patch("wave", "dist:level");
+
+	master->optimize();
 
 	//set up my data to pass to RT Audio call back
 	MyData data;
 	data.channels = CHANNELS;
-	data.device = &g0;
+	data.device = master;
 	data.frameRate = 48000;
 	data.frameSize = 8; //bytes
 	data.keepGoing = true;
@@ -891,28 +902,28 @@ void timeTest() {
 	out[1] = new Patch;
 
 	circuit.addInput(in[0]);
-	circuit.addInput(in[1]);
+	//circuit.addInput(in[1]);
 	circuit.addOutput(out[0]);
-	circuit.addOutput(out[1]);
+	//circuit.addOutput(out[1]);
 
-	Gain *g0 = new Gain;
-	g0->setParameter("level", 1.0);
-	circuit.addDevice("g0", g0);
+	Distortion *dist = new Distortion;
+	dist->setBypass(false);
+	circuit.addDevice("distortion", dist);
 
-	Gain *g1 = new Gain;
-	g1->setParameter("level", 1.0);
-	circuit.addDevice("g1", g1);
+	SineWaveGenerator* sin = new SineWaveGenerator;
+	sin->setFrequency(0.5);
+	sin->setAmplitude(1.0);
+	circuit.addDevice("sine", sin);
 
-	circuit.patch("in:0", "g0");
-	circuit.patch("in:1", "g1");
-	circuit.patch("g0", "out:0");
-	circuit.patch("g1", "out:1");
+	circuit.patch("in:0", "distortion");
+	circuit.patch("distortion", "out:0");
+	circuit.patch("sin", "distortion:threshold");
 
 	const int BUFF_SIZE = 48000;
 	double* input = new double[BUFF_SIZE];
 	double* output = new double[BUFF_SIZE];
 
-	for (double i = 0; i < BUFF_SIZE; i++) {
+	for (double i = 0.; i < BUFF_SIZE; i++) {
 		input[(int)i] = i;
 	}
 
@@ -924,22 +935,26 @@ void timeTest() {
 			if (!in[0]->pushSignal(input[i])) {
 				throw new std::exception("push[0] failure");
 			}
+			/*
 			if (!in[1]->pushSignal(input[i])) {
 				throw new std::exception("push[1] failure");
 			}
-
+			*/
 
 			if (!circuit.process()) {
 				throw new std::exception("process failure");
 			}
+			circuit.incrementTime(1. / 48000.);
 
 
 			if (!out[0]->requestSignal(output[i])) {
 				throw new std::exception("request[0] failure");
 			}
+			/*
 			if (!out[1]->requestSignal(output[i])) {
 				throw new std::exception("request[1] failure");
 			}
+			*/
 		}
 		catch (std::exception e) {
 			std::cerr << e.what();
@@ -949,7 +964,7 @@ void timeTest() {
 
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> diff = end - start;
-	std::cout << "Time taken for 48k stereo samples: " << diff.count() << "!";
+	std::cout << "Time taken for " << BUFF_SIZE << "stereo samples: " << diff.count() << "!";
 
 	std::cin.get();
 
@@ -958,6 +973,7 @@ void timeTest() {
 		if (output[(int)i] != i) {
 			passed = false;
 			std::cout << "index[" << (int)i << "] does not match!\n";
+			break;
 		}
 	}
 	if (passed) {
@@ -968,6 +984,9 @@ void timeTest() {
 	}
 	std::cin.get();
 
+
+	delete[] input;
+	delete[] output;
 	delete in[0];
 	delete in[1];
 	delete out[0];
@@ -977,7 +996,7 @@ void timeTest() {
 }
 
 bool traverse(double* data, void* arg) {
-	*data += 1.;
+	*data += 1.f;
 	return true;
 }
 
@@ -1029,11 +1048,11 @@ void listTest() {
 
 int main(){
     
-	listTest();
+	//listTest();
 
 	//timeTest();
 
-	//rtAudioTest();
+	rtAudioTest();
 
 	//envelopeTest();
 

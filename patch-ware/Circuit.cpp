@@ -48,7 +48,7 @@ Circuit::~Circuit() {
 
 	//clean up my internal components
 	
-	for (std::pair<std::string, PatchDevice*> p : devices) {
+	for (auto p : devices) {
 		delete p.second;
 		p.second = NULL;
 	}
@@ -85,12 +85,21 @@ bool Circuit::removeDevice(const std::string &tag) {
 //increment time for all on board wave generators and call
 //recursively to any on board sub-Circuits
 void Circuit::incrementTime(const double time) {
+	double tm = time;
+	auto inc = [](Timer* t, void* time_ptr)->bool {
+		double* d = (double*)time_ptr;
+		t->incrementTime(*d);
+		return true;
+	};
+	timers.apply(inc, &tm);
+	/*
 	for (auto p : devices) {
 		if (toTimer(p.second) != NULL) {
 			Timer* timer = toTimer(p.second);
 			timer->incrementTime(time);
 		}
 	}
+	*/
 }
 
 //attempts to add the device to this circuit with the tag provided.
@@ -105,13 +114,16 @@ bool Circuit::addDevice(const std::string &tag, OutputDevice* const device) {
 			Circuit *c = toCircuit(device);
 			c->incrementLevel();
 		}
+		if (toTimer(device) != NULL) {
+			timers.push_back(toTimer(device));
+		}
 		return true;
 	}
 	return false;
 }
 
 //attempts to patch the output of the output device to the input device.
-//if teither device is not present within this circuit or the input and 
+//if either device is not present within this circuit or the input and 
 //output parameters don't match input or output parameters respectively
 //false is returned.
 //for patching into parameters, use OutputDevice:Parameter format, e.g.
@@ -156,7 +168,7 @@ bool Circuit::patch(const std::string &output, const std::string &input) {
 	int oSize = parse(output, oStrings); // <--- creates string[] on heap !!!!!
 
 	
-	//valid results from parsing strings
+	//validate results from parsing strings
 	if (pw_abs(iSize - oSize) > 1) {
 		//devices too different in scope
 		//i.e. input = "myCircuit:myWaveGen:frequency"
@@ -295,9 +307,11 @@ bool Circuit::patch(const std::string &output, const std::string &input) {
 		return false;
 	}
 
-	Patch * patch = new Patch;
 
-	
+	//made it this far, we can make the patch !!!
+
+
+	Patch * patch = new Patch;
 
 	//Set the input of the new patch
 	if (oChannel == -1) {
@@ -734,7 +748,7 @@ bool Circuit::process() {
 	}
 	
 	
-	std::vector<Patch*>::iterator it = firstPatches.begin();
+	auto it = firstPatches.begin();
 	inputs.apply(getInputs, &it);
 
 	order.apply(processInOrder, NULL);

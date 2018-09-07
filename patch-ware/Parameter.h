@@ -86,7 +86,7 @@ private:
 };
 
 
-double operator+(const double, const Parameter &);
+	double operator+(const double, const Parameter &);
     double operator-(const double, const Parameter &);
     double operator*(const double, const Parameter &);
     double operator/(const double, const Parameter &);

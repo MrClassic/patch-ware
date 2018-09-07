@@ -52,9 +52,13 @@ public:
      ******************************************************************** */
     WaveGenerator(){
 		phaseCorrecter = 0.;
-		params["frequency"] = 1.;
-		params["amplitude"] = 1.;
-		params["phase"] = 0.;
+		addParameter("frequency");
+		addParameter("amplitude");
+		addParameter("phase");
+		params["frequency"] = 1.0;
+		params["amplitude"] = 1.0;
+		params["phase"] = 0.0;
+
 	}
     
     /* **************************************************************
@@ -136,8 +140,9 @@ public:
      * Post-condition:  The frequency for the Wave Generator will be set.
      ********************************************************************** */
     virtual void setFrequency(const double frequency){
-        lastFrequency = (double)(params["frequency"]); 
-        params["frequency"].setParameter(frequency);
+		Parameter &fr = params["frequency"];
+		lastFrequency = (double)fr;
+		fr.setParameter(frequency);
     };
     
     /* *********************************************************************
@@ -150,8 +155,9 @@ public:
      * Post-condition:  The amplitude for the Wave Generator will be set.
      ********************************************************************** */
     virtual void setAmplitude(const double amplitude){
-        lastAmplitude = (double)params["amplitude"];
-        params["amplitude"].setParameter(amplitude);
+        Parameter &a = params["amplitude"];
+		lastAmplitude = (double)a;
+		a.setParameter(amplitude);
     };
     
     /* ********************************************************************
@@ -164,8 +170,9 @@ public:
      * updated.
      ******************************************************************** */
     virtual void setPhase(const double phase){
-        lastPhase = (double)params["phase"];
-        params["phase"].setParameter(phase);
+		Parameter &ph = params["phase"];
+        lastPhase = (double)ph;
+        ph.setParameter(phase);
     };
     
     /* ********************************************************************
@@ -176,11 +183,12 @@ public:
      ********************************************************************* */
     virtual void incrementTime(const double time){
         currentTime += time;
-        while(currentTime > (1. / (double)params["frequency"])){
-            currentTime -= (1. / (double)params["frequency"]);
+		const double freq = params["frequency"];
+        while(currentTime > (1. / freq)){
+            currentTime -= (1. / freq);
         }
         while(currentTime < 0){
-            currentTime += (1. / (double)params["frequency"]);
+            currentTime += (1. / freq);
         }
     }
     
@@ -227,21 +235,12 @@ public:
      * ready, false otherwise.
      ******************************************************************** */
     bool paramsReady() {
-        if (params["amplitude"].isPatched() && !params["amplitude"].isReady()) {
-            return false;
-        }
-        if (params["phase"].isPatched() && !params["phase"].isReady()) {
-            return false;
-        }
-        if (params["frequency"].isPatched() && !params["frequency"].isReady()) {
-            return false;
-        }
-        return true;
+		return parametersReady();
     }
     
 	//boolean cast for checking ready state
 	operator bool() {
-		return paramsReady();
+		return parametersReady();
 	}
 
     /* ********************************************************************
@@ -251,7 +250,7 @@ public:
 protected:
     
     //member variables
-    double currentTime; //current time between 0 and frequency
+    //double currentTime; //current time between 0 and frequency
     double lastFrequency;
     double lastAmplitude;
     double lastPhase;

@@ -12,6 +12,7 @@
 #ifndef DISTORTION_H
 #define	DISTORTION_H
 
+#include "pwmath.h"
 #include "Effect.h"
 
 /* ************************************************************************

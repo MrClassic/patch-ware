@@ -89,6 +89,7 @@ private:
 	std::map<std::string, PatchDevice*> devices;
 	LinkedList<Patch> patch_master;
 	LinkedList<PatchDevice> order;
+	LinkedList<Timer> timers;
 	std::vector<Patch*> firstPatches;
 	std::vector<Patch*> lastPatches;
 	int level;

@@ -5,6 +5,9 @@
  * Log
  *      5/5/17
  *      File Created
+		9/2/18
+		Optimized the process() method:
+			reduced map lookups
  */
 
 #include "Distortion.h"
@@ -18,8 +21,8 @@
 Distortion::Distortion() {
 
 	//set parameters to defaults
-    params["threshold"] = 1.0;
-    params["bypass"] = false;
+	addParameter("threshold");
+    params["threshold"] = 1.;
 
 }
 
@@ -33,22 +36,26 @@ Distortion::~Distortion() {/* Do nothing */}
 bool Distortion::process(){
 
 	//check for ready state
-    if(!*this || (params["threshold"].isPatched() && !params["threshold"].isReady())){
+    if(!*this || !parametersReady()){
         return false;
     }
 
-	//update threshold parameter
-    params["threshold"].process();
+	//update parameters
+	updateParameters();
 
 	//get input signal
     double signal = input();
+	if (params["bypass"]) {
+		output(signal);
+	}
+	double thresh = params["threshold"];
 
 	//run distortion algorithm
-    if(signal > 0 && params["threshold"] < signal && !params["bypass"]){
-        output(params["threshold"]);
+    if(signal > 0. && pw_abs(thresh) < signal){
+        output(thresh);
     }
-    else if(signal < 0 && signal < (params["threshold"] * -1.) && !params["bypass"]){
-        output((params["threshold"] * -1.));
+    else if(signal < 0. && pw_abs(thresh) < signal * -1.){
+        output((thresh * -1.));
     }
     else{
         output(signal);

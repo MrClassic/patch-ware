@@ -12,7 +12,7 @@
 #include "Gain.h"
 
 Gain::Gain() {
-    params["bypass"] = false;
+	addParameter("level");
     params["level"] = 1.0;
 }
 
@@ -28,12 +28,10 @@ bool Gain::process(){
 
 	//check for ready state
 	
-    if(!isReady()){
+    if(!isReady() || !parametersReady()){
         return false;
     }
-    if(!parametersReady()){
-        return false;
-    }
+	
 	
 	//get input
     double signal = input();

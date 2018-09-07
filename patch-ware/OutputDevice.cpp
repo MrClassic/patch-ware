@@ -129,10 +129,8 @@ know if it should continue applying this function to the next Patch in the list.
 bool OutputDevice::outputToPatches(Patch* patch, void* arg) {
     double* signal = (double*) arg;
 	if (!*patch)
-		patch->pushSignal(*signal);
-	else
-		return false;
-	return true;
+		return patch->pushSignal(*signal);
+	
 }
 
 /*
