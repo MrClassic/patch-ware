@@ -11,41 +11,25 @@
 
 #include "Gain.h"
 
-Gain::Gain() {
-	addParameter("level");
-    params["level"] = 1.0;
+Gain::Gain() : SignalProcessor() {
+	params.resize(NUM_PARAMS);
 }
 
-Gain::Gain(const Gain& orig) {
-	copyParameters(orig);
+Gain::Gain(const Gain& orig) : SignalProcessor(orig) {
+	//do nothing...?
 }
 
 Gain::~Gain() {
     //Do nothing =o)
 }
 
-bool Gain::process(){
-
-	//check for ready state
-	
-    if(!isReady() || !parametersReady()){
-        return false;
-    }
-	
-	
-	//get input
-    double signal = input();
-
-	//update parameter
-	updateParameters();
+double Gain::processSignal(const double &signal){
 
 	//calculate and output
-    if(!params["bypass"]){
-        output(params["level"] * signal);
+    if(params[BYPASS] >= 1.){
+		return signal;
     }else{
-        output(signal);
+		return signal * params[LEVEL];
     }
 
-	//success!
-    return true;
 }

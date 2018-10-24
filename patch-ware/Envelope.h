@@ -53,6 +53,7 @@
 //patchware includes
 #include "Parameterizable.h"
 #include "Timer.h"
+#include "EnvelopeProcessor.h"
 
 //Envelope class
 class Envelope : public InputDevice, public OutputDevice, public Parameterizable, public Timer{
@@ -62,29 +63,26 @@ public:
 
 	Envelope();
 
+	Envelope(EnvelopeProcessor* eProc);
+
 	Envelope(const Envelope &rhs);
 
-	//Timer definition
-	virtual void incrementTime(const double);
-
+	EnvelopeProcessor* getProc() {
+		return proc;
+	}
+	void setInputType(input_type in) {
+		inputType = in;
+		proc->type = in;
+	}
 	//Patch device definition
 	virtual bool process();
 
+	void incrementTime(const double time);
 
 //protected shit
 protected:
 	
-	//envelope function accepts the input signal,
-	//may be used or not, thats up to the implementer
-	virtual double envelope(const double signal) = 0;
-
-	//boolean for whether the envelope is activated or not
-	bool on;
-
-	//boolean for whether the envelope resets if
-	//triggered while active, or if it should
-	//ignore threshold triggers while active
-	bool reset;
+	EnvelopeProcessor* proc;
 
 };
 

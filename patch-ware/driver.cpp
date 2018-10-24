@@ -6,34 +6,54 @@
  *      File Created
  ************************************************************************* */
 
+
+#ifndef DRIVER_CPP
+#define DRIVER_CPP
+
 //#include <sys/ioctl.h>
 //#include <unistd.h>
 //#include <linux/kd.h>
 #include <fstream>
 #include <string>
 #include <exception>
-//#include <fftw.h>
+#include <fftw3.h>
 #include <chrono>
+
 #include "RtAudio.h"
 
-#include "FIRFilter.h"
-#include "IIRFilter.h"
-#include "SineWaveGenerator.h"
-#include "SquareWaveGenerator.h"
-#include "TriangleWaveGenerator.h"
-#include "SawtoothWaveGenerator.h"
-#include "QuadraticWaveGenerator.h"
+//circuit
+#include "ProcessorCluster.h"
+#include "Circuit.h"
+
+//effect includes
+#include "SignalProcessor.h"
+#include "Effect.h"
 #include "Compressor.h"
 #include "Distortion.h"
 #include "InvertDistortion.h"
 #include "Delay.h"
 #include "BiquadFilter.h"
 #include "Gain.h"
+#include "Gate.h"
+#include "FIRFilter.h"
+#include "IIRFilter.h"
+
+//wave generator includes
+#include "WaveProcessor.h"
+#include "SineWaveGenerator.h"
+#include "SquareWaveGenerator.h"
+#include "TriangleWaveGenerator.h"
+#include "SawtoothWaveGenerator.h"
+#include "QuadraticWaveGenerator.h"
 #include "ZeroWaveGenerator.h"
 #include "SignalSpy.h"
-#include "Circuit.h"
 #include "PulseGenerator.h"
+
+//envelope includes
+#include "Envelope.h"
 #include "LinearEnvelope.h"
+
+#include "Parser.h"
 
 /*
 void playSound(){
@@ -50,6 +70,8 @@ void playSound(){
 
 }
 */
+
+//Circuit* fileToCircuit(const std::string &);
 
 void print(double in){
     std::cout << in;
@@ -93,7 +115,8 @@ void filterTester(){
     filter->setCoefficient(1, 0.2);
     filter->setCoefficient(2, 0.3);
     filter->setCoefficient(3, 0.4);
-    filter->setBypass(false);
+	*filter->paramAddr(Filter::BYPASS) = 0.;
+    //filter->setBypass(false); deprecated
     double push = 0.01;
     for(int i = 0; i < 15; i++){
         push += 0.01 * (double)i;
@@ -103,11 +126,19 @@ void filterTester(){
     delete filter;
     filter = new IIRFilter;
     filter->setOrder(3);
+	/*
     filter->setCoefficient(0, -0.1);
     filter->setCoefficient(1, -0.2);
     filter->setCoefficient(2, -0.3);
     filter->setCoefficient(3, -0.4);
-    filter->setBypass(false);
+	*/
+	*filter->paramAddr(Filter::COEFFICIENTS + 0) = -0.1;
+	*filter->paramAddr(Filter::COEFFICIENTS + 1) = -0.2;
+	*filter->paramAddr(Filter::COEFFICIENTS + 2) = -0.3;
+	*filter->paramAddr(Filter::COEFFICIENTS + 3) = -0.4;
+
+	*filter->paramAddr(Filter::BYPASS) = 0.;
+	//filter->setBypass(false); deprecated
     push = 0.01;
     for(int i = 0; i < 15; i++){
         push += 0.01 * (double)i;
@@ -249,7 +280,7 @@ Patch* patchDevices(OutputDevice* out, InputDevice * in){
     in->addInput(p);
     return p;
 }
-
+/*
 void patchDriverCopy(){
     
     //master lists
@@ -262,16 +293,16 @@ void patchDriverCopy(){
     double freq = 1.;
     
     //wave generator for parameter controls
-    WaveGenerator *param = new SineWaveGenerator();
-    param->setPhase(0.);
+    SineWaveGenerator *param = new SineWaveGenerator;
+    param->params;
     param->setAmplitude(2);
     param->setFrequency(1.7);
     
     //wave generator for signal boosting
-    WaveGenerator *boost = new ZeroWaveGenerator(4.00001);
+    WaveGenerator *boost = new WaveGenerator(new ZeroWaveGenerator(4.00001));
     
     //sine wave generator for signal
-    WaveGenerator *signal = new SquareWaveGenerator();
+    WaveGenerator *signal = new WaveGenerator(new SquareWaveGenerator);
     signal->setAmplitude(1.);
     signal->setFrequency(8.0);
     signal->setPhase(0.);
@@ -282,10 +313,12 @@ void patchDriverCopy(){
     genMaster.push_back(signal);
     
     //Gain effect
-    Gain* gain = new Gain();
-	gain->setParameter("level", 1.0);
+    Effect* gain = new Effect(new Gain());
+	*gain->getProc()->paramAddr(Gain::BYPASS) = 0.;
+	*gain->getProc()->paramAddr(Gain::LEVEL) = 1.0;
+	//gain->setParameter("level", 1.0); deprecated
     //gain->setLevel(1.0);
-    gain->setBypass(false);
+    //gain->setBypass(false); deprectaed
     gain->setInputType(SUM);
     effectMaster.push_back(gain);
     
@@ -405,11 +438,16 @@ void patchDriver(){
     genMaster.push_back(signal);
     
     //Gain effect
-    Gain* gain = new Gain();
-    gain->setParameter("level", 1.0);
-    gain->setBypass(false);
-    gain->setInputType(SUM);
-    effectMaster.push_back(gain);
+    Effect* gain = new Effect(new Gain());
+	*gain->getProc()->paramAddr(Gain::BYPASS) = 0.;
+	*gain->getProc()->paramAddr(Gain::LEVEL) = 1.;
+	gain->getProc()->setInputType(SUM);
+
+    //gain->setParameter("level", 1.0);
+    //gain->setBypass(false);
+    //gain->setInputType(SUM);
+    
+	effectMaster.push_back(gain);
     
     std::ofstream out;
     out.open("output.csv"); //circuit output file
@@ -542,29 +580,47 @@ void circuitTest() {
 	circuit.addDevice("zero", zero);
 
 	//Gain
-	Gain *gain = new Gain;
-	gain->setParameter("level", 1.);
-	gain->setInputType(input_type::SUM);
+	Effect *gain = new Effect(new Gain);
+	*gain->getProc()->paramAddr(Gain::BYPASS) = 0.;
+	*gain->getProc()->paramAddr(Gain::LEVEL) = 1.;
+	gain->getProc()->setInputType(SUM);
+
+	//gain->setParameter("level", 1.);
+	//gain->setInputType(input_type::SUM);
+	
 	circuit.addDevice("gain", gain);
 	
 
 	//FIR filter
-	Filter *fir = new IIRFilter;
+	IIRFilter* fir = new IIRFilter;
 	//fir->setBypass(true);
+
 	fir->setOrder(10);
 	//set up coefficients
-	fir->setCoefficient(0, 1.);
-	fir->setCoefficient(1, -0.08);
-	fir->setCoefficient(2, -0.04);
-	fir->setCoefficient(3, -0.03);
-	fir->setCoefficient(4, 0.035);
-	fir->setCoefficient(5, -0.025);
-	fir->setCoefficient(6, -0.625);
-	fir->setCoefficient(7, 0.125);
-	fir->setCoefficient(8, 0.025);
-	fir->setCoefficient(9, -.15);
-	fir->setCoefficient(10, -0.1);
-	circuit.addDevice("fir", fir);
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 0) = 1.;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 1) = -0.08;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 2) = -0.04;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 3) = -0.03;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 4) = 0.035;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 5) = -0.025;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 6) = -0.625;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 7) = 0.125;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 8) = 0.025;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 9) = -0.15;
+	*fir->paramAddr(IIRFilter::COEFFICIENTS + 10) = -0.1;
+	//fir->setCoefficient(0, 1.);
+	//fir->setCoefficient(1, -0.08);
+	//fir->setCoefficient(2, -0.04);
+	//fir->setCoefficient(3, -0.03);
+	//fir->setCoefficient(4, 0.035);
+	//fir->setCoefficient(5, -0.025);
+	//fir->setCoefficient(6, -0.625);
+	//fir->setCoefficient(7, 0.125);
+	//fir->setCoefficient(8, 0.025);
+	//fir->setCoefficient(9, -.15);
+	//fir->setCoefficient(10, -0.1);
+	
+	circuit.addDevice("fir", new Effect(fir));
 	
 	//Signal Spy
 	std::ofstream file("rawOut.csv");
@@ -622,8 +678,12 @@ void envelopeTest() {
 	signalIn->addOutput(&inLink);
 
 	Gain* gain = new Gain;
-	gain->setParameter("level", 1.0);
-	circuit.addDevice("gain", gain);
+	*gain->paramAddr(Gain::BYPASS) = 0.;
+	*gain->paramAddr(Gain::LEVEL) = 1.;
+
+	//gain->setParameter("level", 1.0);
+	
+	circuit.addDevice("gain", new Effect(gain));
 
 	//Envelope
 	Envelope* env = new LinearEnvelope;
@@ -663,16 +723,29 @@ void envelopeTest() {
 	int stall = 0;
 
 }
+*/
+struct ProcessingBlock {
+	double* inputs, **outputs, *params;
+	ProcessingBlock** next;
+	int _inputs, _outputs, _params, _nexts;
+
+	virtual void proc() = 0;
+};
 
 struct MyData{
 	unsigned int channels;
 	unsigned int frameRate;
 	unsigned int frameSize;
-	Patch** input;
-	Patch** output;
-	Circuit* device;
+	double** input;
+	double* output;
+	ProcessorCluster* pc;
 	bool keepGoing;
 };
+
+bool proc(Processor* data, void*) {
+	data->process();
+	return true;
+}
 
 int call_back(
 		void* outputBuffer,			//output buffer
@@ -699,6 +772,8 @@ int call_back(
 
 	double* iBuf = (double*)inputBuffer;
 	double* oBuf = (double*)outputBuffer;
+
+
 	try {
 		//while still stuff to read from buffer
 		for (int sample = 0; sample < nFrames; sample++) {
@@ -711,26 +786,38 @@ int call_back(
 
 			//load input(s) into patches
 			for (int channel = 0; channel < myData->channels; channel++) {
+				*myData->input[channel] = iBuf[index++];
+				/*
 				if (!myData->input[channel]->pushSignal(iBuf[index++])) {
 					std::string message = "Push signal failed. channel: " + std::to_string(channel) + '\n';
 					throw std::exception(message.c_str());
 				}
-				//std::cout << "input[" << index - 1 << "] = " << iBuf[index - 1] << '\n';
+				*/
+				//if(sample % 100 == 0)
+					//std::cout << "input[" << index - 1 << "] = " << iBuf[index - 1] << '\n';
 			}
 
 			//process the circuit
-			if (!myData->device->process())
-				throw std::exception("Patch Device could not process");
+			//if (!myData->device->process())
+				//throw std::exception("Patch Device could not process");
+
+			//for (int block = 0; block < myData->blockCount; block++) {
+			//	myData->blocks[block]->proc();
+			//}
+
+			//process for all processors in group
+			myData->pc->process();
 
 			//increment time
-			myData->device->incrementTime(1. / (double)myData->frameRate);
+			//myData->device->incrementTime(1. / (double)myData->frameRate);
 
 			//load output(s) from patches
 			for (int channel = 0; channel < myData->channels; channel++) {
-				if (!myData->output[channel]->requestSignal(oBuf[outdex++])) {
-					std::string message = "Request signal failed. channel: " + std::to_string(channel) + '\n';
-					throw std::exception(message.c_str());
-				}
+				oBuf[outdex++] = myData->output[channel];
+				//if (!myData->output[channel]->requestSignal(oBuf[outdex++])) {
+				//	std::string message = "Request signal failed. channel: " + std::to_string(channel) + '\n';
+				//	throw std::exception(message.c_str());
+				//}
 				//std::cout << "output[" << outdex - 1 << "] = " << oBuf[outdex - 1] << '\n';
 			}
 			
@@ -751,31 +838,201 @@ int call_back(
 	return 0;
 }
 
+
+struct gain : ProcessingBlock {
+	const int GAIN = 0;
+	gain() {
+		_params = 1;
+		params = new double[_params];
+		params[GAIN] = 1.0;
+		_inputs = 1;
+		inputs = new double[_inputs];
+		_outputs = 1;
+		outputs = new double*[_outputs];
+		_nexts = _outputs;
+		next = new ProcessingBlock*[_nexts];
+	}
+	~gain() {
+		delete params;
+		delete inputs;
+		delete outputs;
+		delete next;
+	}
+	void proc() {
+		double signal = inputs[0];
+		for (int i = 1; i < _inputs; i++) {
+			signal += inputs[i];
+		}
+		signal /= _inputs;
+		signal *= params[GAIN];
+		for (int o = 0; o < _outputs; o++) {
+			*outputs[o] = signal;
+		}
+		for (int n = 0; n < _nexts; n++) {
+			next[n]->proc();
+		}
+	}
+};
+struct adder : ProcessingBlock {
+	const int LEVEL = 0;
+	adder() {
+		_params = 1;
+		params = new double[_params];
+		params[LEVEL] = 1.0;
+		_inputs = 1;
+		inputs = new double[_inputs];
+		_outputs = 1;
+		outputs = new double*[_outputs];
+		_nexts = _outputs;
+		next = new ProcessingBlock*[_nexts];
+	}
+	~adder() {
+		delete params;
+		delete inputs;
+		delete outputs;
+		delete next;
+	}
+	void proc() {
+		double signal = inputs[0];
+		if (inputs != NULL) {
+			for (int i = 1; i < _inputs; i++) {
+				signal += inputs[i];
+			}
+		}
+		signal /= _inputs;
+		signal += params[LEVEL];
+		if (outputs != NULL) {
+			for (int o = 0; o < _outputs; o++) {
+				*outputs[o] = signal;
+			}
+		}
+		if (next != NULL) {
+			for (int n = 0; n < _nexts; n++) {
+				next[n]->proc();
+			}
+		}
+	}
+};
+struct dist : ProcessingBlock {
+	const int THRESH = 0;
+	int inputCounter = 0;
+	int procCount = 0;
+	dist() {
+		_params = 1;
+		params = new double[_params];
+		params[THRESH] = 1.0;
+		_inputs = 1;
+		inputs = new double[_inputs];
+		_outputs = 1;
+		outputs = new double*[_outputs];
+		_nexts = _outputs;
+		next = new ProcessingBlock*[_nexts];
+	}
+	~dist() {
+		delete params;
+		delete inputs;
+		delete outputs;
+		delete next;
+	}
+	void proc() {
+		++inputCounter;
+		if (inputCounter == 2) {
+			++procCount;
+			inputCounter = 0;
+			double signal = inputs[0];
+			for (int i = 1; i < _inputs; i++) {
+				signal += inputs[i];
+			}
+			signal /= _inputs;
+
+			if (signal > params[THRESH]) {
+				signal = params[THRESH];
+			}
+			else if (signal < (params[THRESH] * -1)) {
+				signal = params[THRESH] * -1;
+			}
+
+			for (int o = 0; o < _outputs; o++) {
+				*outputs[o] = signal;
+			}
+			/*
+			for (int n = 0; n < _nexts; n++) {
+				next[n]->proc();
+			}
+			*/
+		}
+	}
+};
+struct sine : ProcessingBlock {
+	const int AMP = 0;
+	const int FREQ = 1;
+	const int PHASE = 2;
+	const double F_RATE = 1. / 48000.;
+	double time;
+	
+
+	sine() {
+		time = 0;
+		_params = 3;
+		params = new double[_params];
+		params[AMP] = 1.0;
+		params[FREQ] = 1.0;
+		params[PHASE] = 0.0;
+		_inputs = 0;
+		inputs = NULL;
+		_outputs = 1;
+		outputs = new double*[_outputs];
+		_nexts = _outputs;
+		next = new ProcessingBlock*[_nexts];
+	}
+	~sine() {
+		delete params;
+		//delete inputs;
+		delete outputs;
+		delete next;
+	}
+	void proc() {
+		/*
+		double signal = inputs[0];
+		for (int i = 1; i < _inputs; i++) {
+			signal += inputs[i];
+		}
+		signal /= _inputs;
+		*/
+		double signal = params[AMP] * sineD((time * params[FREQ] + params[PHASE])* 360.);
+		time += F_RATE;
+		while (time > 1. / params[FREQ]) {
+			time -= (1. / params[FREQ]);
+		}
+		for (int o = 0; o < _outputs; o++) {
+			*outputs[o] = signal;
+		}
+		for (int n = 0; n < _nexts; n++) {
+			next[n]->proc();
+		}
+	}
+};
+
+
 void rtAudioTest() {
 
 	//number of channels
 	const unsigned int CHANNELS = 1;
 	unsigned int bufferFrames = 512;
 
+	double* _inputs[CHANNELS];
+	double _outputs[CHANNELS];
+
+	LinkedList<Processor> proc_master;
+
 	//input patches for interfacing with RT Audio
-	Patch** inputs = new Patch*[CHANNELS];
+	Patch* inputs[CHANNELS];// = new Patch*;
 
 	//output patches for interfacing with RT Audio
-	Patch** outputs = new Patch*[CHANNELS];
+	Patch* outputs[CHANNELS];// = new Patch*;
 
 	//master circuit
 	Circuit* master = new Circuit;
-
-	//internal device for master circuit
-	//Gain g0;
-	//g0.setParameter("level", 1.);
-	//master->addDevice("g0", g0);
-
-	//Gain *g1 = new Gain;
-	//g1->setParameter("level", 1.);
-	//master->addDevice("g1", g1);
-
-
 
 	//create patches and patch them into master circuit
 	for (int channel = 0; channel < CHANNELS; channel++) {
@@ -789,36 +1046,97 @@ void rtAudioTest() {
 	}
 
 	
-	SineWaveGenerator* wave = new SineWaveGenerator;
-	wave->setAmplitude(1.0);
-	wave->setFrequency(0.5);
-	wave->setPhase(0.);
-	delete wave;
-	//master->addDevice("wave", wave);
+	SineWaveGenerator* sine0 = new SineWaveGenerator;
+	sine0->frameRate = 48000;
+	proc_master.push_back(sine0);
+	WaveGenerator* wgSine0 = new WaveGenerator(sine0);
+	wgSine0->setParameter("frequency", 0.5);
+	wgSine0->setParameter("amplitude", 0.5);
+	wgSine0->setParameter("phase", 0.0);
+	master->addDevice("sine0", wgSine0);
 
-	Effect *dist = new Gain;
-	dist->setBypass(false);
-	dist->setParameter("level", 0.0000000000001);
-	master->addDevice("dist", dist);
+	SineWaveGenerator *sine1 = new SineWaveGenerator;
+	sine1->frameRate = 48000;
+	proc_master.push_back(sine1);
+	WaveGenerator* wgSine1 = new WaveGenerator(sine1);
+	wgSine1->setParameter("amplitude", 1.0);
+	wgSine1->setParameter("phase", 0.0);
+	master->addDevice("sine1", wgSine1);
+
+	ZeroWaveGenerator* zero0 = new ZeroWaveGenerator;
+	proc_master.push_back(zero0);
+	WaveGenerator* wgZero0 = new WaveGenerator(zero0);
+	wgZero0->setParameter("amplitude", 1.5);
+	master->addDevice("zero0", wgZero0);
+
+	ZeroWaveGenerator* zero1 = new ZeroWaveGenerator;
+	proc_master.push_back(zero1);
+	WaveGenerator* wgZero1 = new WaveGenerator(zero1);
+	wgZero1->setParameter("amplitude", 440.);
+	master->addDevice("zero1", wgZero1);
+
+	Gain* adder = new Gain;
+	proc_master.push_back(adder);
+	Effect* eAdder = new Effect(adder);
+	eAdder->addParameter("level", adder->paramAddr(Gain::LEVEL));
+	eAdder->setParameter("level", 1.5);
+	master->addDevice("adder", eAdder);
+	adder->setInputType(input_type::SUM);
+
+	Gain* mult = new Gain;
+	proc_master.push_back(mult);
+	Effect* eMult = new Effect(mult);
+	eMult->addParameter("level", mult->paramAddr(Gain::LEVEL));
+	eMult->setParameter("level", 1.0);
+	master->addDevice("mult", eMult);
+	mult->setInputType(input_type::PRODUCT);
+
+	Gain* mute = new Gain;
+	proc_master.push_back(mute);
+	Effect* eMute = new Effect(mute);
+	eMute->addParameter("level", mute->paramAddr(Gain::LEVEL));
+	eMute->setParameter("level", 0.0);
+	master->addDevice("mute", eMute);
+	mute->setInputType(input_type::PRODUCT);
+
+	Gain* combine = new Gain;
+	proc_master.push_back(combine);
+	Effect* eCombine = new Effect(combine);
+	eCombine->addParameter("level", combine->paramAddr(Gain::LEVEL));
+	eCombine->setParameter("level", 1.0);
+	master->addDevice("combine", eCombine);
+	combine->setInputType(input_type::SUM);
 
 	//simple bypass circuit
-	master->patch("in:0", "dist");
-	//master->patch("in:1", "g1");
-	master->patch("dist", "out:0");
+	master->patch("in:0", "mute");
+	master->patch("sine0", "adder");
+	master->patch("zero0", "adder");
+	master->patch("adder", "mult");
+	master->patch("zero1", "mult");
+	master->patch("mult", "sine1:frequency");
+	master->patch("mute", "combine");
+	master->patch("sine1", "combine");
+	master->patch("combine", "out:0");
 	//master->patch("g1", "out:1");
 	//master->patch("wave", "dist:level");
 
 	master->optimize();
 
+	ProcessorCluster* pc = master->exportAsPrcoessor();
+	for (int channel = 0; channel < CHANNELS; ++channel) {
+		_inputs[channel] = pc->inputAddr(channel);
+		pc->setOutputChannel(channel, &_outputs[channel]);
+	}
+
 	//set up my data to pass to RT Audio call back
 	MyData data;
 	data.channels = CHANNELS;
-	data.device = master;
 	data.frameRate = 48000;
 	data.frameSize = 8; //bytes
+	data.pc = pc;
 	data.keepGoing = true;
-	data.input = inputs;
-	data.output = outputs;
+	data.input = _inputs;
+	data.output = _outputs;
 
 	//RT Audio stream parameters
 	RtAudio::StreamParameters inputParams;
@@ -884,77 +1202,178 @@ CLEANUP:
 		delete inputs[channel];
 		delete outputs[channel];
 	}
-	delete[] inputs;
-	delete[] outputs;
+	proc_master.clear(true);
+	//delete[] inputs;
+	//delete[] outputs;
 	//delete master;
 }
 
+
 void timeTest() {
 
-	Circuit circuit;
+	const unsigned int CHANNELS = 1;
+	unsigned int bufferFrames = 512;
 
-	Patch** in = new Patch*[2];
-	in[0] = new Patch;
-	in[1] = new Patch;
+	double* _inputs[CHANNELS];
+	double _outputs[CHANNELS];
 
-	Patch** out = new Patch*[2];
-	out[0] = new Patch;
-	out[1] = new Patch;
+	LinkedList<Processor> proc_master;
 
-	circuit.addInput(in[0]);
-	//circuit.addInput(in[1]);
-	circuit.addOutput(out[0]);
-	//circuit.addOutput(out[1]);
+	//input patches for interfacing with RT Audio
+	Patch* inputs[CHANNELS];// = new Patch*;
 
-	Distortion *dist = new Distortion;
-	dist->setBypass(false);
-	circuit.addDevice("distortion", dist);
+	//output patches for interfacing with RT Audio
+	Patch* outputs[CHANNELS];// = new Patch*;
 
-	SineWaveGenerator* sin = new SineWaveGenerator;
-	sin->setFrequency(0.5);
-	sin->setAmplitude(1.0);
-	circuit.addDevice("sine", sin);
+	//master circuit
+	Circuit* master = new Circuit;
 
-	circuit.patch("in:0", "distortion");
-	circuit.patch("distortion", "out:0");
-	circuit.patch("sin", "distortion:threshold");
+	//create patches and patch them into master circuit
+	for (int channel = 0; channel < CHANNELS; channel++) {
+		inputs[channel] = new Patch;
+		outputs[channel] = new Patch;
+		//g0.addInput(inputs[channel]);
+		//g0.addOutput(outputs[channel]);
+
+		master->addInput(inputs[channel]);
+		master->addOutput(outputs[channel]);
+	}
+
+
+	SineWaveGenerator* sine0 = new SineWaveGenerator;
+	sine0->frameRate = 48000;
+	proc_master.push_back(sine0);
+	WaveGenerator* wgSine0 = new WaveGenerator(sine0);
+	wgSine0->setParameter("frequency", 0.5);
+	wgSine0->setParameter("amplitude", 0.5);
+	wgSine0->setParameter("phase", 0.0);
+	master->addDevice("sine0", wgSine0);
+
+	SineWaveGenerator *sine1 = new SineWaveGenerator;
+	sine1->frameRate = 48000;
+	proc_master.push_back(sine1);
+	WaveGenerator* wgSine1 = new WaveGenerator(sine1);
+	wgSine1->setParameter("amplitude", 1.0);
+	wgSine1->setParameter("phase", 0.0);
+	master->addDevice("sine1", wgSine1);
+
+	ZeroWaveGenerator* zero0 = new ZeroWaveGenerator;
+	proc_master.push_back(zero0);
+	WaveGenerator* wgZero0 = new WaveGenerator(zero0);
+	wgZero0->setParameter("amplitude", 1.5);
+	master->addDevice("zero0", wgZero0);
+
+	ZeroWaveGenerator* zero1 = new ZeroWaveGenerator;
+	proc_master.push_back(zero1);
+	WaveGenerator* wgZero1 = new WaveGenerator(zero1);
+	wgZero1->setParameter("amplitude", 440.);
+	master->addDevice("zero1", wgZero1);
+
+	Gain* adder = new Gain;
+	proc_master.push_back(adder);
+	Effect* eAdder = new Effect(adder);
+	eAdder->addParameter("level", adder->paramAddr(Gain::LEVEL));
+	eAdder->setParameter("level", 1.5);
+	master->addDevice("adder", eAdder);
+	adder->setInputType(input_type::SUM);
+
+	Gain* mult = new Gain;
+	proc_master.push_back(mult);
+	Effect* eMult = new Effect(mult);
+	eMult->addParameter("level", mult->paramAddr(Gain::LEVEL));
+	eMult->setParameter("level", 1.0);
+	master->addDevice("mult", eMult);
+	mult->setInputType(input_type::PRODUCT);
+
+	Gain* mute = new Gain;
+	proc_master.push_back(mute);
+	Effect* eMute = new Effect(mute);
+	eMute->addParameter("level", mute->paramAddr(Gain::LEVEL));
+	eMute->setParameter("level", 0.0);
+	master->addDevice("mute", eMute);
+	mute->setInputType(input_type::PRODUCT);
+
+	Gain* combine = new Gain;
+	proc_master.push_back(combine);
+	Effect* eCombine = new Effect(combine);
+	eCombine->addParameter("level", combine->paramAddr(Gain::LEVEL));
+	eCombine->setParameter("level", 1.0);
+	master->addDevice("combine", eCombine);
+	combine->setInputType(input_type::SUM);
+
+	//simple bypass circuit
+	master->patch("in:0", "mute");
+	master->patch("sine0", "adder");
+	master->patch("zero0", "adder");
+	master->patch("adder", "mult");
+	master->patch("zero1", "mult");
+	master->patch("mult", "sine1:frequency");
+	master->patch("mute", "combine");
+	master->patch("sine1", "combine");
+	master->patch("combine", "out:0");
+	//master->patch("g1", "out:1");
+	//master->patch("wave", "dist:level");
+
+	master->optimize();
+
+	Circuit* generated = fileToCircuit("C:\\GitHub\\patch-ware\\patch-ware\\TestEffect.xml");
+
+	//ProcessorCluster* pc = master->exportAsPrcoessor();
+	ProcessorCluster* pc = generated->exportAsPrcoessor();
+
+	for (int channel = 0; channel < CHANNELS; ++channel) {
+		_inputs[channel] = pc->inputAddr(channel);
+		pc->setOutputChannel(channel, &_outputs[channel]);
+	}
 
 	const int BUFF_SIZE = 48000;
-	double* input = new double[BUFF_SIZE];
-	double* output = new double[BUFF_SIZE];
+	double input[BUFF_SIZE];
+	double output[BUFF_SIZE];
 
 	for (double i = 0.; i < BUFF_SIZE; i++) {
 		input[(int)i] = i;
 	}
+	_inputs[0] = pc->inputAddr(0);
+	*pc->outputAddr(0) = &_outputs[0];
 
 	auto start = std::chrono::system_clock::now();
 
 	for (int i = 0; i < BUFF_SIZE; i++) {
 
 		try {
+			/*
 			if (!in[0]->pushSignal(input[i])) {
 				throw new std::exception("push[0] failure");
 			}
+			/*
 			/*
 			if (!in[1]->pushSignal(input[i])) {
 				throw new std::exception("push[1] failure");
 			}
 			*/
 
+			*_inputs[0] = input[i];
+			/*
 			if (!circuit.process()) {
 				throw new std::exception("process failure");
 			}
 			circuit.incrementTime(1. / 48000.);
-
-
+			*/
+			//_sine.proc();
+			//_gainIn.proc();
+			pc->process();
+			/*
 			if (!out[0]->requestSignal(output[i])) {
 				throw new std::exception("request[0] failure");
 			}
+			*/
 			/*
 			if (!out[1]->requestSignal(output[i])) {
 				throw new std::exception("request[1] failure");
 			}
 			*/
+			output[i] = _outputs[0] ;
+
 		}
 		catch (std::exception e) {
 			std::cerr << e.what();
@@ -964,16 +1383,18 @@ void timeTest() {
 
 	auto end = std::chrono::system_clock::now();
 	std::chrono::duration<double> diff = end - start;
-	std::cout << "Time taken for " << BUFF_SIZE << "stereo samples: " << diff.count() << "!";
+	std::cout << "Time taken for " << BUFF_SIZE << " stereo samples: " << diff.count() << "!";
 
 	std::cin.get();
 
 	bool passed = true;
 	for (double i = 0; i < BUFF_SIZE; i++) {
+		if(BUFF_SIZE < 100)
+			std::cout << "index[" << (int)i << "]: " << output[(int)i] << '\n';
 		if (output[(int)i] != i) {
 			passed = false;
-			std::cout << "index[" << (int)i << "] does not match!\n";
-			break;
+			//std::cout << "index[" << (int)i << "] does not match!\n";
+			//break;
 		}
 	}
 	if (passed) {
@@ -984,15 +1405,11 @@ void timeTest() {
 	}
 	std::cin.get();
 
-
-	delete[] input;
-	delete[] output;
-	delete in[0];
-	delete in[1];
-	delete out[0];
-	delete out[1];
-	delete[] in;
-	delete[] out;
+	proc_master.clear(true);
+	if (pc != NULL) {
+		//pc->getOrderList().clear(true);
+		delete pc;
+	}
 }
 
 bool traverse(double* data, void* arg) {
@@ -1046,11 +1463,80 @@ void listTest() {
 	linked.clear(true);
 }
 
+/*
+void fftwTest() {
+
+	const double frameRate = 44000.;
+
+	SineWaveGenerator gen;
+	gen.setFrequency(440.);
+	gen.setAmplitude(1.);
+	gen.setPhase(0.);
+
+	Patch outPatch;
+
+	gen.addOutput(&outPatch);
+
+	const int size = 400;
+	fftw_complex in[size], out[size];
+	fftw_plan plan;
+
+	plan = fftw_plan_dft_1d(size, in, out, FFTW_FORWARD, FFTW_MEASURE);
+	
+
+	double output;
+	const int MAX_IT = 10;
+
+	for (int iteration = 0; iteration < MAX_IT; iteration++) {
+		//populate input array
+		for (int i = 0; i < size; i++) {
+			gen.process();
+			if (outPatch.requestSignal(output)) {
+				in[i][0] = output;
+				in[i][1] = 0.;
+			}
+			else {
+				std::cout << "error requesting signal from patch...";
+				std::cin.get();
+				goto CLEANUP;
+			}
+		}
+
+		std::cout << "iteration " << iteration << '\n';
+
+		for (int i = 0; i < size; i++) {
+			std::cout << "out[" << i << "]: real: " << out[i][0] << " imag: " << out[i][1] << '\n';
+		}
+	}
+	CLEANUP:
+	fftw_destroy_plan(plan);
+	std::cin.get();
+}
+*/
+
+void fileReadTest() {
+
+	std::string filename = "C:\\GitHub\\patch-ware\\patch-ware\\TestEffect.xml";
+	Circuit* circuit = fileToCircuit(filename);
+
+	if (circuit) {
+		std::cout << "success...?\n";
+	}
+	else {
+		std::cout << "failed!!!!\n";
+	}
+	std::cin.get();
+}
+
 int main(){
     
+	//fileReadTest();
+
 	//listTest();
 
 	//timeTest();
+
+	//fftwTest();
 
 	rtAudioTest();
 
@@ -1087,3 +1573,7 @@ int main(){
     
     return 0;
 }
+
+#endif
+
+//EOF

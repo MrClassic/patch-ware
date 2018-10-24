@@ -6,35 +6,34 @@
  *      5/5/17
  *      File Created
  *      Implemented core functionality
+ *		10/8/18
+ *		Changed to implement SignalProcessor interface
  *********************************************************************** */
 
 #include "Delay.h"
 
 Delay::Delay() {
 
+	params.resize(NUM_PARAMS);
+
 	//set decay parameter
-    params["decay"] = 0.5;
+    params[DECAY] = 0.5;
     
 	//set regen parameter
-	params["regen"] = 1.;
+	params[REGEN] = 1.;
 
 	//set mix parameter
-	params["mix"] = 1.;
+	params[MIX] = 1.;
 
 	//set registers
     circular_queue<double> temp(1, 0.);
     registers = temp;
 
 	//set bypass
-    params["bypass"] = false;
+    params[BYPASS] = false;
 }
 
-Delay::Delay(const Delay& orig) {
-
-	//copy parameters
-	for (auto it = orig.params.begin(); it != orig.params.end(); ++it) {
-		params[it->first] = (double)it->second;
-	}
+Delay::Delay(const Delay& orig) : SignalProcessor(orig) {
 
 	//copy registers
     registers = orig.registers;
@@ -42,38 +41,23 @@ Delay::Delay(const Delay& orig) {
 
 Delay::~Delay() {/* Do Nothing */}
 
-bool Delay::process(){
-
-	//check inputs and parameters for ready state
-    if(!*this || 
-		(params["decay"].isPatched() && !params["decay"].isReady() ) ||
-		(params["regen"].isPatched() && !params["regen"].isReady() ) )
-        return false;
-	
-	//update parameters
-    params["decay"].process();
-	params["regen"].process();
+double Delay::processSignal(const double &signal){
 
 	//set memory. If no change, the function backs out
-	setMemory(params["regen"]);
-
-	//get input signal
-    double signal = input();
+	setMemory((int)params[REGEN]);
 
 	//set default output
-    double outSignal = params["mix"] * signal;
+    double outSignal = params[MIX] * signal;
 
 	//mix in stored signal
-    outSignal += params["decay"] * registers.pop();
+    outSignal += params[DECAY] * registers.pop();
 
 	//push output signal into memory registers
     registers.push(outSignal);
 
-	//output signal
-    output(outSignal);
+	//output signal (or original signal if bypassed)
+    return (params[BYPASS] >= 1.) ? signal : outSignal;
 
-	//success
-    return true;
 }
 
 

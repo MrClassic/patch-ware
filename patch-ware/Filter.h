@@ -5,18 +5,21 @@
  * Log
  *      5/2/17
  *      File Created
+ *		10/8/18
+ *		Changed to Implement SignalProcessing interface
  ********************************************************************** */
+
+
+
+#ifndef FILTER_H
+#define	FILTER_H
 
 #ifndef NULL
 #define NULL 0x0
 #endif
 
-#ifndef FILTER_H
-#define	FILTER_H
-
-#include<iostream>
-#include "Parameter.h"
-#include "Effect.h"
+#include <iostream>
+#include "SignalProcessor.h"
 #include "Circular.h"
 
 /* **********************************************************************
@@ -24,7 +27,7 @@
  * Purpose: This class is to loosely model the functionality of a general
  * filter.
  ********************************************************************* */
-class Filter : public Effect{
+class Filter : public SignalProcessor{
 
     /* ******************************************************************
      * 
@@ -61,7 +64,7 @@ public:
      * Post-condition:  The value of the coefficient at the specified register
      *                  will be returned.
      ******************************************************************* */
-    Parameter& getCoefficient(int reg);
+    double* getCoefficient(int reg);
     
     /* ******************************************************************
      *                              Mutators
@@ -82,7 +85,7 @@ public:
      * Pre-condition:   The parameter and calling object should be initialized.
      * Post-condition:  A processed signal is returned.
      ******************************************************************** */
-    bool process();
+    double processSignal(const double &);
     
     /* *******************************************************************
      * Set Order: Mutator for the filter's order. If the order is decreased
@@ -120,10 +123,17 @@ public:
     
     /*********************************************************************/
     
+	//parameter enum for accessing parameter array
+	enum parameters {
+		BYPASS = 0,
+		COEFFICIENTS,
+		NUM_PARAMS
+	};
+
 protected:
     
+	//registers for storing signal data
     circular_stack<double> registers;
-    //Parameter* coefficients;
     
 };
 

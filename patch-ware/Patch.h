@@ -75,6 +75,8 @@ public:
     InputDevice* getOutput() const;
     
     OutputDevice* getInput() const;
+
+	void getChannels(int &input, int &output);
     
     bool isReady() const;
     

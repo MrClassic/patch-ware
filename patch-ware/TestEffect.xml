@@ -1,0 +1,51 @@
+
+<Circuit name="circuit" channels="1">
+  
+  <SineWaveGenerator name="sine0">
+    <param name="amplitude" value="0.5"></param>
+    <param name="frequency" value="0.5"></param>
+  </SineWaveGenerator>
+  
+  <SineWaveGenerator name="sine1">
+    <param name="amplitude" value="1.0"></param>
+  </SineWaveGenerator>
+  
+  <ZeroWaveGenerator name="zero0">
+    <param name="amplitude" value="1.5"></param>
+  </ZeroWaveGenerator>
+  
+  <ZeroWaveGenerator name="zero1">
+    <param name="amplitude" value="440.0"></param>
+  </ZeroWaveGenerator>
+  
+  <Gain name="adder">
+    <param name="level" value="1.0"></param>
+    <input_type value="SUM"></input_type>
+  </Gain>
+  
+  <Gain name="mult">
+    <param name="level" value="1.0"></param>
+    <input_type value="PRODUCT"></input_type>
+  </Gain>
+  
+  <Gain name="mute">
+    <param name="level" value="0.0"></param>
+  </Gain>
+  
+  <Gain name="combine">
+    <param name="level" value="1.0"></param>
+    <input_type value="SUM"></input_type>
+  </Gain>
+  
+  --  Patches --
+  <Patch input="sine0" output="adder"></Patch>
+  <Patch input="zero0" output="adder"></Patch>
+  <Patch input="adder" output="mult"></Patch>
+  <Patch input="zero1" output="mult"></Patch>
+  <Patch input="mult" output="sine1:frequency"></Patch>
+  <Patch input="sine1" output="combine"></Patch>
+  <Patch input="in:0" output="mute"></Patch>
+  <Patch input="mute" output="combine"></Patch>
+  <Patch input="combine" output="out:0"></Patch>
+
+</Circuit>

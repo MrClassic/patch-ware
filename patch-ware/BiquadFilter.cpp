@@ -7,208 +7,62 @@
  *      File Created
  *		8/15/18
  *		implemented Parameterizable interface through Effect
+ *		10/8/18
+ *		changed to implement the SignalProcessor interface
  ***************************************************************** */
 
 #include "BiquadFilter.h"
 
-BiquadFilter::BiquadFilter(){
+BiquadFilter::BiquadFilter() : SignalProcessor() {
+
+	params.resize(NUM_PARAMS);
 
 	//make fir half
     fir = new FIRFilter;
     fir->setOrder(2);
-
+	fir->type = SUM;
+	
 	//make iir half
     iir = new IIRFilter;
     iir->setOrder(2);
+	iir->type = SUM;
 
-	//set bypass
-    params["bypass"] = false;
-    fir->setBypass(false);
-    iir->setBypass(false);
-
-	//patch the halves together
-    patch = new Patch;
-    fir->addOutput(patch);
-    iir->addInput(patch);
-	
 }
 
-BiquadFilter::BiquadFilter(const BiquadFilter& orig) {
+BiquadFilter::BiquadFilter(const BiquadFilter& orig) : SignalProcessor(orig) {
     if(fir != NULL){
         delete fir;
     }
     if(iir != NULL){
         delete iir;
     }
-	if (patch != NULL) {
-		delete patch;
-	}
 
 	//shallow copy
     fir = new FIRFilter(*orig.fir);
     iir = new IIRFilter(*orig.iir);
-	patch = orig.patch;
 
-	//copy over parameters (should just be "bypass")
-	for (auto it = orig.params.begin(); it != orig.params.end(); it++) {
-		params[it->first] = (double)it->second;
-	}
 }
 
 BiquadFilter::~BiquadFilter() {
 
 	//clean up your mess!!!
-    delete patch;
     delete fir;
     delete iir;
 }
 
-bool BiquadFilter::process(){
+double BiquadFilter::processSignal(const double &signal){
 	//updated bypass status for internal filters
-    if(!params["bypass"]){
-        iir->setBypass(false);
-        fir->setBypass(false);
+    if(params[BYPASS] < 1.){
+		iir->params[BYPASS] = 0.;
+        fir->params[BYPASS] = 0.;
     }
     else{
-        iir->setBypass(true);
-        fir->setBypass(true);
+        iir->params[BYPASS] = 1.;
+        fir->params[BYPASS] = 1.;
     }
 	// [signal] >>>> input >>>> fir >>>> iir >>>> output >>>>
-    bool result = fir->process();
-    if(result)
-        result = iir->process();
-    return result;
+	return iir->processSignal(fir->processSignal(signal));
+    
 }
-
-bool BiquadFilter::addOutput(Patch* const patch){
-	//iir manages outputs
-    return iir->addOutput(patch);
-}
-bool BiquadFilter::addInput(Patch* const patch){
-	//fir manages inputs
-    return fir->addInput(patch);
-}
-bool BiquadFilter::removeOutput(Patch* const patch){
-	//iir manages outputs
-    return iir->removeOutput(patch);
-}
-bool BiquadFilter::removeInput(Patch* const patch){
-	//fir manages inputs
-    return fir->removeInput(patch);
-}
-
-bool BiquadFilter::setParameter(const std::string &tag, const double value) {
-	
-	//handle "bypass" parameter
-	//bypass is stored on the biquad itself, not the fir and iir
-	if (tag == "bypass") {
-		params["bypass"] = value;
-		return true;
-	}
-
-	//handle the iir coefficients (a0, a1, a2)
-	else if (tag[0] == 'a' || tag[0] == 'A') {
-		std::string substr = tag.substr(1);
-		if (iir->hasParameter(substr)) {
-			return iir->setParameter(substr, value);
-		}
-		else {
-			return false;
-		}
-	}
-
-	//handle the fir coefficients (b0, b1, b2)
-	else if (tag[0] == 'b' || tag[0] == 'B') {
-		std::string substr = tag.substr(1);
-		if (fir->hasParameter(substr)) {
-			return fir->setParameter(substr, value);
-		}
-		else {
-			return false;
-		}
-	}
-
-	//if not "bypass" or an "a" or "b" coefficient, return false.
-	return false;
-}
-
-bool BiquadFilter::getParameter(const std::string &tag, Parameter* &param) {
-
-	//handle "bypass" parameter
-	//bypass is stored on the biquad itself, not the fir and iir
-	if (tag == "bypass") {
-		param = &params["bypass"];
-		return true;
-	}
-
-	//handle the iir coefficients (a0, a1, a2)
-	else if (tag[0] == 'a' || tag[0] == 'A') {
-		std::string substr = tag.substr(1);
-		if (iir->hasParameter(substr)) {
-			return iir->getParameter(substr, param);
-		}
-		else {
-			return false;
-		}
-	}
-
-	//handle the fir coefficients (b0, b1, b2)
-	else if (tag[0] == 'b' || tag[0] == 'B') {
-		std::string substr = tag.substr(1);
-		if (fir->hasParameter(substr)) {
-			return fir->getParameter(substr, param);
-		}
-		else {
-			return false;
-		}
-	}
-
-	//if not "bypass" or an "a" or "b" coefficient, return false.
-	return false;
-}
-
-bool BiquadFilter::addParameter(const std::string &tag) {
-	//Biquad requires only valid parameters, dont allow any others to be added
-	return false;
-}
-
-bool BiquadFilter::hasParameter(const std::string &tag) const {
-	
-	//bypass is stored on the biquad itself, not the fir and iir
-	if (tag == "bypass") {
-		return true;
-	}
-
-	//handle the iir coefficients (a0, a1, a2)
-	else if (tag[0] == 'a' || tag[0] == 'A') {
-		std::string substr = tag.substr(1);
-		if (iir->hasParameter(substr)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-	//handle the fir coefficients (b0, b1, b2)
-	else if (tag[0] == 'b' || tag[0] == 'B') {
-		std::string substr = tag.substr(1);
-		if (fir->hasParameter(substr)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-	//if not "bypass" or an "a" or "b" coefficient, return false.
-	return false;
-}
-
-LinkedList<Parameter> BiquadFilter::getParameters() {
-	//simply returned both internal filters' lists of parameters
-	return fir->getParameters() + iir->getParameters();
-}
-
 
 //EOF

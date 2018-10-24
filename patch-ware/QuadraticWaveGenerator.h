@@ -14,7 +14,7 @@
 #include<cmath>
 #include "WaveGenerator.h"
 
-class QuadraticWaveGenerator : public WaveGenerator{
+class QuadraticWaveGenerator : public WaveProcessor{
     /* ********************************************************************
      *                      Public Section
      ******************************************************************** */
@@ -54,7 +54,9 @@ public:
     /* *********************************************************************
      * Push Double: 
      ********************************************************************* */
-    bool process();
+    double generate();
+
+	void updateWaveOffset();
     
 private:
 

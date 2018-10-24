@@ -14,7 +14,7 @@
 
 #include "WaveGenerator.h"
 
-class ZeroWaveGenerator : public WaveGenerator{
+class ZeroWaveGenerator : public WaveProcessor{
     
 public:
         
@@ -26,7 +26,7 @@ public:
     
     void updateWaveOffset();
     
-    bool process();
+    double generate();
 };
 
 #endif	/* ZEROWAVEGENERATOR_H */

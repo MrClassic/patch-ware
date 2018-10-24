@@ -8,30 +8,33 @@ File Created
 basic implementation implemented
 8/15/18
 implemented Parameterizable interface
+10/8/18
+changed to implement the Signal Processor interface
 */
 
 #ifndef GATE_H
 #define GATE_H
 
-#include "Effect.h"
+#include "SignalProcessor.h"
 #include "pwmath.h"
 
-class Gate : public Effect {
+class Gate : public SignalProcessor {
 
 public:
 
 	/*
 	Default Constructor, sets the threshold to 1
 	*/
-	Gate() {
-		params["threshold"] = 1.;
+	Gate() : SignalProcessor() { 
+		params.push_back(0.); //BYPASS
+		params.push_back(0.); //THRESH
 	}
 
 	/*
 	initialization constructor, initializes the threshold parameter.
 	*/
-	Gate(double thresh) {
-		params["threshold"] = thresh;
+	Gate(double thresh) : SignalProcessor(){
+		params[THRESH] = thresh;
 	}
 
 	
@@ -39,37 +42,28 @@ public:
 	Proces, sends the input signal to the outputs if it is greater than the threshold,
 	sends 0 if the signal is too low.
 	*/
-	bool process() {
+	double processSignal(const double &signal) {
 
-		//test for bypass
-		params["bypass"].process();
-		if (params["bypass"]) {
-			//bypass gate
-			output(input());
-			return true;
-		}
-
-		//validate parameter
-		if (params["threshold"].isPatched() && !params["threshold"].isReady() || !*this) {
-			return false;
-		}
+		if (params[BYPASS] >= 1.)
+			return signal;
 
 		//gate logic
-		double in = input();
-		params["threshold"].process();
-		if (pw_abs(in) > pw_abs((double)params["threshold"])){
+		
+		if (pw_abs(signal) > pw_abs(params[THRESH])){
 			//send signal through gate
-			output(in);
+			return signal;
 		}
 		else {
 			//block signal (send 0)
-			output(0.);
+			return 0.;
 		}
 
-		//success!
-		return true;
 	}
 
+	enum parameters {
+		BYPASS = 0,
+		THRESH
+	};
 private:
 
 	

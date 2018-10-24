@@ -14,11 +14,11 @@
 #ifndef DELAY_H
 #define	DELAY_H
 
-#include "Effect.h"
+#include "SignalProcessor.h"
 #include "Circular.h"
 
 
-class Delay : public Effect{
+class Delay : public SignalProcessor{
 public:
     
     /* **********************************************************************
@@ -34,11 +34,18 @@ public:
     
     ~Delay();
     
-    bool process();
+    double processSignal(const double &);
     
-    
+	enum parameter {
+		BYPASS = 0,
+		DECAY,
+		REGEN,
+		MIX,
+		NUM_PARAMS
+	};
     
 protected:
+
 	void setMemory(int blocks);
 
     circular_queue<double> registers;

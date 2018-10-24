@@ -11,9 +11,9 @@
 #ifndef SAWTOOTHWAVEGENERATOR_H
 #define	SAWTOOTHWAVEGENERATOR_H
 
-#include "WaveGenerator.h"
+#include "WaveProcessor.h"
 
-class SawtoothWaveGenerator : public WaveGenerator{
+class SawtoothWaveGenerator : public WaveProcessor{
     
 public:
     /* ********************************************************************
@@ -55,8 +55,10 @@ public:
     /* *********************************************************************
      * Get Double: 
      ********************************************************************* */
-    bool process();
+    double generate();
     
+
+	void updateWaveOffset();
     
 private:
 

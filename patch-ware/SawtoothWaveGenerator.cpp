@@ -9,6 +9,7 @@
  *		8/16/18
  *		Happy Birthday Wifey!!!
  *		implemented Parameterizable interface
+ *		(don't worry, she's out of the house, i'm not a workaholic)
  *
  *      TO DO:
  *      Add phase shift calculation for changing frequency
@@ -19,25 +20,21 @@
 SawtoothWaveGenerator::SawtoothWaveGenerator() { /* Do Nothing*/ }
 
 SawtoothWaveGenerator::SawtoothWaveGenerator(const double frequency){
-	params["frequency"] = frequency;
+	params[FREQUENCY] = frequency;
 }
 
-SawtoothWaveGenerator::SawtoothWaveGenerator(const SawtoothWaveGenerator& orig) {
-	copyParameters(orig);
-	currentTime = orig.currentTime;
-}
+SawtoothWaveGenerator::SawtoothWaveGenerator(const SawtoothWaveGenerator& orig) { /* Do Nothing */ }
 
 SawtoothWaveGenerator::~SawtoothWaveGenerator() { /* Do nothing */ }
 
-bool SawtoothWaveGenerator::process(){
-	//check parameters
-    if(!*this)
-        return false;
+void SawtoothWaveGenerator::updateWaveOffset() {
+	phaseCorrector = currentTime *
+		(lastFreq - params[FREQUENCY]) + phaseCorrector;
+}
 
+double SawtoothWaveGenerator::generate(){
+	
 	//calculate and output
-    double signal = params["amplitude"] * 2. * getPhaseOffset() / (1. / (double)params["frequency"]) - (double)params["amplitude"];
-    output(signal);
-
-	//success
-    return true;
+    return params[AMPLITUDE] * 2. * getPhaseOffset() / (1. / params[FREQUENCY]) - params[AMPLITUDE];
+    
 }

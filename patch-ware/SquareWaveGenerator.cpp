@@ -12,6 +12,8 @@
  *		8/16/18
  *		Happy Birthday Wifey!!!
  *		implemented Parameterizable interface
+ *		10/10/18
+ *		changed to implement the WaveProcessor interface
  ********************************************************************* */
 #include "SquareWaveGenerator.h"
 
@@ -20,17 +22,13 @@ SquareWaveGenerator::SquareWaveGenerator() {
     firstHalf = false;
 }
 
-SquareWaveGenerator::SquareWaveGenerator(double frequency) {
-    params["frequency"] = frequency;
-    waveOutput = 0.;
-    firstHalf = false;
+SquareWaveGenerator::SquareWaveGenerator(double frequency) : SquareWaveGenerator() {
+    params[FREQUENCY] = frequency;
 }
 
 SquareWaveGenerator::SquareWaveGenerator(const SquareWaveGenerator& orig) {
-	copyParameters(orig);
-    currentTime = orig.currentTime;
-    waveOutput = 0.;
-    firstHalf = false;
+    waveOutput = orig.waveOutput;
+    firstHalf = orig.firstHalf;
 }
 
 SquareWaveGenerator::~SquareWaveGenerator() {
@@ -38,8 +36,8 @@ SquareWaveGenerator::~SquareWaveGenerator() {
 }
 
 void SquareWaveGenerator::updateWaveOffset() {
-    phaseCorrecter = currentTime *
-            (lastFrequency - (double) params["frequency"]) + phaseCorrecter;
+    phaseCorrector = currentTime *
+            (lastFreq - params[FREQUENCY]) + phaseCorrector;
 }
 
 /* ************************************************************************
@@ -54,22 +52,10 @@ void SquareWaveGenerator::updateWaveOffset() {
 * Post-conditions: The next value of the wave being generated will be output
 * to the next (set of) patch(es).
 ************************************************************************** */
-bool SquareWaveGenerator::process() {
-    if (!paramsReady()) {
-        return false;
-    }
-    /*
-	!!!! Debug line !!!!
-    if(currentTime > 0.5){
-        int stall = 0;
-    }
-     * */
-    setFrequency((double) params["frequency"]);
-    setAmplitude((double) params["amplitude"]);
-    setPhase((double) params["phase"]);
-
+double SquareWaveGenerator::generate() {
+    
 	//input into the wave function
-    double in = currentTime * params["frequency"] + getPhaseOffset();
+    double in = currentTime * params[FREQUENCY] + getPhaseOffset();
 
     while (in < 0) {
         in += 1.; //********************
@@ -83,10 +69,10 @@ bool SquareWaveGenerator::process() {
     //amplitude input will shape the wave
     /*
     if( in <  (0.5)) {
-        waveOutput = (double)params["amplitude"];
+        waveOutput = params[AMPLITUDE];
     }
     else{
-        waveOutput = -1 * (double)params["amplitude"];
+        waveOutput = -1 * params[AMPLITUDE];
     }
     */
 
@@ -96,18 +82,16 @@ bool SquareWaveGenerator::process() {
     
     if (in < 0.5 && !firstHalf) {
         firstHalf = true;
-        waveOutput = (double)params["amplitude"];
+        waveOutput = params[AMPLITUDE];
     }
     if(in >= 0.5 && firstHalf){
         firstHalf = false;
-        waveOutput = (double)params["amplitude"] * -1.;
+        waveOutput = params[AMPLITUDE] * -1.;
     }
     
 	//output
-    output(waveOutput);
+    return waveOutput;
     
-	//success
-    return true;
 }
 
 //EOF

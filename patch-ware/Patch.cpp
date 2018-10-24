@@ -34,6 +34,36 @@ OutputDevice* Patch::getInput() const {
     return input;
 }
 
+void Patch::getChannels(int &input, int &output) {
+	input = -1;
+	output = -1;
+
+	struct data {
+		Patch* compare;
+		int index;
+	};
+	auto find = [](Patch* p, void *arg)->bool {
+		data* d = (data*)arg;
+		++(d->index);
+		if (d->compare == p) {
+			return false;
+		}
+		return true;
+	};
+	data d;
+	d.compare = this;
+	d.index = -1;
+	if (getInput() != NULL) {
+		getInput()->outputs.apply(find, &d);
+		input = d.index;
+		d.index = -1;
+	}
+	if (getOutput() != NULL) {
+		getOutput()->inputs.apply(find, &d);
+		output = d.index;
+	}
+}
+
 bool Patch::pushSignal(const double signal){
     if(ready){
         return false;

@@ -10,13 +10,13 @@
 #ifndef TRIANGLEWAVEGENERATOR_H
 #define	TRIANGLEWAVEGENERATOR_H
 
-#include"WaveGenerator.h"
+#include"WaveProcessor.h"
 /* **********************************************************************
  * Class: Triangle Wave Generator
  * Inherits From:   Wave Generator
  * Purpose: To emulate a Triangle Wave Generator.
  ********************************************************************** */
-class TriangleWaveGenerator : public WaveGenerator{
+class TriangleWaveGenerator : public WaveProcessor{
 public:
     
     /* ********************************************************************
@@ -58,7 +58,9 @@ public:
     /* *********************************************************************
      * Process: 
      ********************************************************************* */
-    bool process();
+	double generate();
+
+	void updateWaveOffset();
     
 private:
 

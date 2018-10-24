@@ -34,7 +34,7 @@ public:
 
 	bool getParameter(const std::string &tag, Parameter* &param);
 
-	bool addParameter(const std::string &tag);
+	bool addParameter(const std::string &tag, double * const ptr);
 
 	bool hasParameter(const std::string &tag) const;
 

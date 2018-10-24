@@ -15,38 +15,28 @@
 #ifndef BIQUADFILTER_H
 #define	BIQUADFILTER_H
 
-class BiquadFilter : public Effect{
+class BiquadFilter : public SignalProcessor {
 public:
     BiquadFilter();
     BiquadFilter(const BiquadFilter& orig);
-    ~BiquadFilter();
-    bool process();
+    virtual ~BiquadFilter();
+    virtual double processSignal(const double &signal);
     
-    bool addOutput(Patch * const patch);
-    bool addInput(Patch * const patch);
-    virtual bool removeOutput(Patch * const patch);
-    bool removeInput(Patch * const patch);
-	
-	// Parameterizable overloaded methods
-	bool virtual setParameter(const std::string &tag, const double value);
-
-	bool getParameter(const std::string &tag, Parameter* &param);
-
-	bool addParameter(const std::string &tag);
-
-	bool hasParameter(const std::string &tag) const;
-
-	LinkedList<Parameter> getParameters();
-
-    
+	enum parameters {
+		BYPASS = 0,
+		A0,
+		A1,
+		A2,
+		B0,
+		B1,
+		B2,
+		NUM_PARAMS
+	};
 private:
 
     FIRFilter* fir;
     IIRFilter* iir;
-    Patch* patch;
 
-	//pointers to onboard filters' parameters
-	std::map<std::string, Parameter*> param_ptrs;
 };
 
 #endif	/* BIQUADFILTER_H */

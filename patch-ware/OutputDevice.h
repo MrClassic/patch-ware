@@ -27,6 +27,8 @@ class OutputDevice : public virtual PatchDevice{
     
 public:
     
+	friend class Patch;
+
     OutputDevice();
     
     OutputDevice(Patch * const patch);

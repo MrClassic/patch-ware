@@ -5,12 +5,11 @@
 ZeroWaveGenerator::ZeroWaveGenerator(){ /* Do Nothing */ }
 
 ZeroWaveGenerator::ZeroWaveGenerator(double amplitude){
-    params["amplitude"] = amplitude;
+    params[AMPLITUDE] = amplitude;
 }
 
 ZeroWaveGenerator::ZeroWaveGenerator(const ZeroWaveGenerator &orig){
-	copyParameters(orig);
-    currentTime = orig.currentTime;
+	
 }
 
 ZeroWaveGenerator::~ZeroWaveGenerator(){ /* Do Nothing */ }
@@ -19,19 +18,11 @@ void ZeroWaveGenerator::updateWaveOffset(){
     //do nothing, wave has no frequency
 }
 
-bool ZeroWaveGenerator::process() {
-
-	//only check amplitude because its the only parameter that matters
-	//for a Zero Wave Generator
-    if(params["amplitude"].isPatched() && !params["amplitude"].isReady()){
-        return false;
-    }
+double ZeroWaveGenerator::generate() {
 
 	//output amplitude. Easy peasy
-    output(params["amplitude"]);
+    return params[AMPLITUDE];
 
-	//success!
-    return true;
 }
 
 //EOF

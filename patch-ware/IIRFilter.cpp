@@ -11,20 +11,16 @@
 
 #include "IIRFilter.h"
 
-IIRFilter::IIRFilter() {
+IIRFilter::IIRFilter() : Filter() {
     //setOrder(0);
     //bypass = true;
 }
 
-IIRFilter::IIRFilter(const IIRFilter& orig) {
+IIRFilter::IIRFilter(const IIRFilter& orig) : Filter(orig){
 
 	//copy registers
 	registers = orig.registers;
 
-	//copy Parameters
-	for (auto it = orig.params.begin(); it != orig.params.end(); ++it) {
-		params[it->first] = (double)it->second;
-	}
 }
 
 IIRFilter::~IIRFilter() { }
@@ -32,17 +28,13 @@ IIRFilter::~IIRFilter() { }
 double IIRFilter::pushDouble(double signal){
     
     double out = 0.0;
-    if(!params["bypass"]){
-        out += params["0"] * signal;
-        //int startIndex = regStart;
-        for(int reg = 0; reg < registers.size(); reg++){
-            out += params[std::to_string(reg+1)] * registers[reg];
-        }
-        registers.push(out);
+    
+    out += params[COEFFICIENTS] * signal;
+    //int startIndex = regStart;
+    for(int reg = 0; reg < registers.size(); reg++){
+        out += params[COEFFICIENTS + reg + 1] * registers[reg];
     }
-    else{
-        out = signal;
-    }
+    registers.push(out);
     
     return out;
 }

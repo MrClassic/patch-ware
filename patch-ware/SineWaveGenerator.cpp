@@ -11,6 +11,8 @@
  *		8/16/18
  *		Happy Birthday Wifey!!!
  *		implemented Parameterizable interface
+ *		10/10/18
+ *		Changed to implement the WaveProcessor interface
  ********************************************************************* */
 
 #include "SineWaveGenerator.h"
@@ -22,8 +24,7 @@
  * value zero (0).
  ********************************************************************* */
 SineWaveGenerator::SineWaveGenerator() {
-    //amplitudeEnvelope = 0.;
-    //amplitudeEnvelopeStartVal = 0.;
+    //do nothing
 }
 
 /** *********************************************************************
@@ -33,9 +34,7 @@ SineWaveGenerator::SineWaveGenerator() {
  * @param frequency - The frequency to initialize this sine wave generator.
  ********************************************************************** */
 SineWaveGenerator::SineWaveGenerator(double frequency){
-    params["frequency"] = frequency;
-    //amplitudeEnvelope = 0.;
-    //amplitudeEnvelopeStartVal = 0.;
+    params[FREQUENCY] = frequency;
 }
 
 /** ************************************************************************
@@ -45,11 +44,7 @@ SineWaveGenerator::SineWaveGenerator(double frequency){
  * @param orig - an existing sine wave generator to copy.
  ************************************************************************ */
 SineWaveGenerator::SineWaveGenerator(const SineWaveGenerator& orig) {
-    currentTime = orig.currentTime;
-	copyParameters(orig);
-	//amplitudeEnvelopeStartTime = orig.amplitudeEnvelopeStartTime;
-	//amplitudeEnvelope = orig.amplitudeEnvelope;
-    //amplitudeEnvelopeStartVal = orig.amplitudeEnvelopeStartVal;
+    //do nothing
 }
 
 /** *************************************************************************
@@ -115,15 +110,7 @@ void SineWaveGenerator::setFrequency(double freq){
  *********************************************************************** */
 void SineWaveGenerator::updateWaveOffset(){
     
-    //phaseCorrecter = 
-    /*double inSine = 360 * (lastFrequency * currentTime + lastPhase + phaseCorrecter);
-    double sin = sineD(inSine);
-    double asin = asineD( (lastAmplitude / (double)amplitude) * sin) * 1./360.; 
-    double afterAsin = asin - (frequency * currentTime) - (double)phase;
-    phaseCorrecter = afterAsin;
-    */
-    
-    phaseCorrecter = lastFrequency * currentTime + lastPhase + phaseCorrecter - (params["frequency"] * currentTime + params["phase"]);
+    phaseCorrector = lastFreq * currentTime + lastPhase + phaseCorrector - (params[FREQUENCY] * currentTime + params[PHASE]);
     
 }
 
@@ -134,28 +121,11 @@ void SineWaveGenerator::updateWaveOffset(){
  *      i.e. if it's inputs are not ready.
  *      true if the double was pushed out successfully.
  *********************************************************************** */
-bool SineWaveGenerator::process(){
-    
-    if(!paramsReady()){
-        return false;
-    }
-    
-    //force update on parameters before
-    //getting the phase offset
-	updateParameters();
-    
-    //get phase offset
-    double offset = getPhaseOffset();
+double SineWaveGenerator::generate(){
     
     //send signal to output
-	double in = 360.0 * (params["frequency"] * currentTime + offset);
-    double out = sineD(in);
+    return params[AMPLITUDE] * sineD(360.0 * (params[FREQUENCY] * currentTime + getPhaseOffset()));
     
-    //amplitudeEnvelope = amplitudeEnvelopeStartTime
-    
-    output(params["amplitude"] * out);
-    
-    return true;
 }
 
 //EOF

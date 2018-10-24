@@ -3,8 +3,10 @@
 
 
 //patchware includes
+#include "ProcessorCluster.h"
 #include "WaveGenerator.h"
 #include "Effect.h"
+#include "Envelope.h"
 #include "pwmath.h"
 
 //std includes
@@ -36,8 +38,12 @@ public:
 	//updates all sub-timers
 	void incrementTime(const double time);
 
+	const std::vector<Patch*>& getFirstPatches() { return firstPatches; };
+
+	const std::vector<Patch*>& getLastPatches() { return lastPatches; };
+
 	//add and remove devices
-	bool addDevice(const std::string&, OutputDevice* const);
+	bool addDevice(const std::string&, PatchDevice* const);
 	bool removeDevice(const std::string&);
 	
 	//patch and unpatch devices
@@ -46,6 +52,8 @@ public:
 
 	//optimizes circuit path (called implicitly on process)
 	void optimize();
+
+	ProcessorCluster* exportAsPrcoessor();
 
 	//process circuit inputs and send to outputs
 	virtual bool process();
@@ -89,6 +97,7 @@ private:
 	std::map<std::string, PatchDevice*> devices;
 	LinkedList<Patch> patch_master;
 	LinkedList<PatchDevice> order;
+	//LinkedList<Processor> processOrder;
 	LinkedList<Timer> timers;
 	std::vector<Patch*> firstPatches;
 	std::vector<Patch*> lastPatches;

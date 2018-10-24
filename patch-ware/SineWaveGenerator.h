@@ -12,9 +12,9 @@
 #define	SINEWAVEGENERATOR_H
 
 #include "sineTable.h"
-#include "WaveGenerator.h"
+#include "WaveProcessor.h"
 
-class SineWaveGenerator : public WaveGenerator{
+class SineWaveGenerator : public WaveProcessor{
     /* ********************************************************************
      *                      Public Section
      ******************************************************************** */
@@ -61,7 +61,7 @@ public:
     /* *********************************************************************
      * Get Double: 
      ********************************************************************* */
-    bool process();
+    double generate();
     
 private:
     //double amplitudeEnvelope;

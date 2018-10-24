@@ -104,7 +104,7 @@ void Circuit::incrementTime(const double time) {
 
 //attempts to add the device to this circuit with the tag provided.
 //If the tag is already in use, false is returned, else true is returned.
-bool Circuit::addDevice(const std::string &tag, OutputDevice* const device) {
+bool Circuit::addDevice(const std::string &tag, PatchDevice* const device) {
 	if (tag.find(':') != std::string::npos || tag == "in" || tag == "out") {
 		return false;
 	}
@@ -733,6 +733,279 @@ void Circuit::optimize() {
 	}//end queue loop
 
 	changed = false;
+}
+
+ProcessorCluster* Circuit::exportAsPrcoessor() {
+
+	//make sure the circuit patching is up to date
+	optimize();
+
+	//look up for linkeing PatchDevices to Processors
+	std::map<PatchDevice*, Processor*> bindings;
+
+	//holds the processing order for the new Processor Cluster
+	LinkedList<Processor> procs;
+
+	auto func = [](PatchDevice* p, void *arg)->bool {
+		std::map<PatchDevice*, Processor*>* map = (std::map<PatchDevice*, Processor*>*)arg;
+
+		//check for Effect
+		Effect* effect = dynamic_cast<Effect*>(p);
+		if (effect != NULL) {
+			if (effect->getProc() == NULL)
+				return false;
+			(*map)[p] = effect->getProc();//shallow copy
+			effect->getProc()->clear();
+			//reserve space for input channels
+			//allocate input channels
+			effect->getProc()->getInputs().resize(effect->getInputCount());
+			//allocate output channels
+			effect->getProc()->getOutputs().resize(effect->getOutputCount());
+			return true;
+		}
+
+		//check for WaveGenerator
+		WaveGenerator* wg = dynamic_cast<WaveGenerator*>(p);
+		if (wg != NULL) {
+			if (wg->getProc() == NULL) {
+				return false;
+			}
+			(*map)[p] = (Processor*)wg->getProc();//shallow copy
+			wg->getProc()->clear();
+			//reserve output channels
+			wg->getProc()->getOutputs().resize(wg->getOutputCount());
+			return true;
+		}
+
+		//check for Envelope
+		Envelope* env = dynamic_cast<Envelope*>(p);
+		if (env != NULL) {
+			if (env->getProc() == NULL) {
+				return false;
+			}
+			(*map)[p] = env->getProc();//shallow copy
+			env->getProc()->clear();
+			//allocate input channels
+			env->getProc()->getInputs().resize(env->getInputCount());
+			//allocate output channels
+			env->getProc()->getOutputs().resize(env->getOutputCount());
+			return true;
+		}
+
+		return false;
+	};
+
+	if (!order.apply(func, &bindings)) {
+		//clean up map allocation
+		//when deep copy of processor gets implemented
+	}
+
+	struct linkArgs {
+		ProcessorCluster* pc;
+		Circuit* circuit;
+	};
+
+	ProcessorCluster* cluster = new ProcessorCluster;
+	cluster->inputMappings.resize(firstPatches.size());
+	cluster->inputs.resize(getInputCount());
+	cluster->outputMappings.resize(lastPatches.size());
+	cluster->outputs.resize(getOutputCount());
+
+	auto link = [](Patch* p, void* arg)->bool {
+
+		//convert argument
+		linkArgs* data = (linkArgs*)arg;
+
+		struct _data {
+			Patch* patch;
+			int index;
+		};
+		auto find = [](Patch* pd, void* arg)->bool {
+			_data* d = (_data*)arg;
+			++(d->index);
+			if (pd == d->patch)
+				return false;
+			return true;
+		};
+
+		//variables for this patches input and output channel number
+		//for their respective devices.
+		//This is where it gets a little confusing... Sorry
+		int iIndex, oIndex;
+
+		//iIndex refers to the OUTPUT INDEX of the device that is
+		//the input into this patch. That happenes to be an OutputDevice.
+		iIndex = -1;
+
+		//oIndex refers to he opposite. The input channel into the InputDevice
+		//thta sits at the output of this patch.
+		oIndex = -1;
+
+		p->getChannels(iIndex, oIndex);
+
+		//pointers to input processor and output processor
+		Processor *iProc, *oProc;
+
+		//iProc refers to the processor associated with the device at 
+		//the input of this patch. This will point to the processor
+		//inside the OutputDevice whose output becomes this patch's input.
+		iProc = NULL;
+
+		//oProc refers to the opposite of iProc.
+		//iProc will point to the processor inside the InputDevice
+		//that sits at the output of this patch.
+		oProc = NULL;
+
+		//pointers to store the actual memory to be linked together
+		double* in;
+		double** out;
+
+		//"in" will point to an input memory variable. This will eventually
+		//be pointing to in inputs within oProc's input vector.
+		in = NULL;
+
+		//"out" is the opposite of "in" and will point to an output
+		//pointer inside iProc.
+		out = NULL;
+
+		if (p->getInput() != NULL) {
+
+			//assign iProc pointer
+
+			//handle Effect
+			Effect* effect = dynamic_cast<Effect*>(p->getInput());
+			if (effect != NULL) {
+				iProc = effect->getProc();
+			}
+
+			//handle WaveGenerator
+			WaveGenerator* wg = dynamic_cast<WaveGenerator*>(p->getInput());
+			if (wg != NULL) {
+				iProc = (Processor*)wg->getProc();
+			}
+
+			//handle Envelope
+			Envelope* env = dynamic_cast<Envelope*>(p->getInput());
+			if (env != NULL) {
+				iProc = env->getProc();
+			}
+
+		}
+
+		if (p->getOutput() != NULL) {
+
+			//assign oProc pointer
+
+			//handle Effect
+			Effect* effect = dynamic_cast<Effect*>(p->getOutput());
+			if (effect != NULL) {
+				oProc = effect->getProc();
+			}
+
+			//handle Envelope
+			Envelope* env = dynamic_cast<Envelope*>(p->getOutput());
+			if (env != NULL) {
+				oProc = env->getProc();
+			}
+
+			//handle Parameter
+			Parameter *param = dynamic_cast<Parameter*>(p->getOutput());
+			if (param != NULL) {
+				in = param->getPtr();
+			}
+		}
+
+		if (iIndex != -1) {
+			//input into patch was the output of an internal patchdevice
+			out = &iProc->getOutputs()[iIndex];
+		}
+		else {
+			//input into the patch was from "firstPatches" and needs to be mapped
+			//carefully to the ProcessorCluster's input mappings.
+			//find index
+			for (auto it = data->circuit->getFirstPatches().begin(); it != data->circuit->getFirstPatches().end(); ++it) {
+				++iIndex;
+				if (*it == p) {
+					break;
+				}
+			}
+		}
+
+		if (oIndex != -1) {
+			if (in == NULL) {
+				//output from patch goes into a patch device
+				in = &oProc->getInputs()[oIndex];
+			}
+			else {
+				//in already assigned means it got its address 
+				//from the Parameter at the output of this patch.
+				
+				//do nothing
+			}
+		}
+		else {
+			//output from the patch goes into "lastPatches" and needs to be
+			//mapped to the ProcessorCluster's output mappings.
+			//find the index!
+			for (auto it = data->circuit->getLastPatches().begin(); it != data->circuit->getLastPatches().end(); ++it) {
+				++oIndex;
+				if (*it == p) {
+					break;
+				}
+			}
+		}
+
+		//update pointers (its about time!):
+
+		if (iProc != NULL && (oProc != NULL || in != NULL))
+			//neither pointer is linked to outside this ProcessorCluster
+			*out = in;
+
+		else if (iProc == NULL && oProc != NULL)
+			//input into this patch is linked to this ProcessorCluster's input mappings
+			data->pc->mapToInput(oIndex, in);
+
+		else if (iProc != NULL && oProc == NULL)
+			//output of this patch is linked to the ProcessorCluster's output mapping
+			data->pc->mapToOutput(iIndex, *out);
+
+		else if (iProc == NULL && oProc == NULL) {
+			//both input and output of this patch refer to input/output mappings
+			//(this patch bypasses all internal processors)
+			double *temp;
+			data->pc->mapToOutput(iIndex, temp);
+			data->pc->mapToInput(oIndex, temp);
+		}
+
+
+
+		return true;//continue with the rest of the list
+	};
+
+	linkArgs args;
+	args.pc = cluster;
+	args.circuit = this;
+
+	patch_master.apply(link, &args);
+
+	struct sorterArgs {
+		std::map<PatchDevice*, Processor*>* map;
+		LinkedList<Processor> *list;
+	};
+	auto sorter = [](PatchDevice *pd, void *args) {
+		sorterArgs* data = (sorterArgs*)args;
+		data->list->push_back(data->map->at(pd));
+		return true;
+	};
+
+	sorterArgs sortArgs;
+	sortArgs.list = &procs;
+	sortArgs.map = &bindings;
+	order.apply(sorter, &sortArgs);
+
+	cluster->setOrderList(procs);
+	return cluster;
+
 }
 
 bool Circuit::process() {

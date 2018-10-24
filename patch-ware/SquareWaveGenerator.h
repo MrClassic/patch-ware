@@ -10,14 +10,14 @@
 #ifndef SQUAREWAVEGENERATOR_H
 #define	SQUAREWAVEGENERATOR_H
 
-#include"WaveGenerator.h"
+#include"WaveProcessor.h"
 
 /* **********************************************************************
  * Class: Square Wave Generator
  * Inherits From:   Wave Generator
  * Purpose: To emulate a Square Wave Generator. Easy right...?
  ********************************************************************** */
-class SquareWaveGenerator : public WaveGenerator{
+class SquareWaveGenerator : public WaveProcessor {
 public:
     
     /* ********************************************************************
@@ -59,7 +59,7 @@ public:
     /* *********************************************************************
      * Get Double: 
      ********************************************************************* */
-    bool process();
+    double generate();
     
     void updateWaveOffset();
     

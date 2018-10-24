@@ -8,6 +8,8 @@
  *      implemented basic accessors and mutators
  *      5/3/17
  *      finished implementing setOrder.
+ *		10/8/18
+ *		Changed to Implement SignalProcessing interface
  ********************************************************************** */
 
 #include "Filter.h"
@@ -17,17 +19,16 @@
  *                      Filter implementation
  * 
  *********************************************************************** */
-Filter::Filter() {
+Filter::Filter() : SignalProcessor() {
 	circular_stack<double> reg(1);
 	registers = reg;
 	registers[0] = 0.;
-	params[std::to_string(0)] = 1.;
-	params[std::to_string(1)] = 0.;
+	params.push_back(0.); //BYPASS
+	params.push_back(1.); //Coefficient 0
+	params.push_back(0.); //Coefficient 1
 }
 
 Filter::~Filter(){
-    //delete[] coefficients;
-    //coefficients = NULL;
 }
 
 /* ***********************************************************************
@@ -38,12 +39,10 @@ int Filter::getOrder() const{
     return registers.size();
 }
 
-Parameter& Filter::getCoefficient(int reg){
-	std::string asString = std::to_string(reg);
-	if (!hasParameter(asString)) {
-		return params["0"];
-	}
-	return params[asString];
+double* Filter::getCoefficient(int reg){
+	if (reg >= params.size())
+		return NULL;
+	return &params[COEFFICIENTS + reg];
 }
 
 
@@ -51,68 +50,31 @@ Parameter& Filter::getCoefficient(int reg){
  *                          Mutators
  ************************************************************************ */
 
-bool Filter::process(){
-    //check my input channels for ready
-    if(!isReady()){
-        return false;
-    }
-    
-    //check my parameters for ready
-    for(int coe = 0; coe <= registers.size(); coe++){
-		std::string asString = std::to_string(coe);
-        if(params[asString].isPatched() && !params[asString].isReady()){
-            return false;
-        }
-    }
+double Filter::processSignal(const double &signal){
     
     
-    double signal = input();
-    for(int coe = 0; coe <= registers.size(); coe++){
-        params[std::to_string(coe)].process();
-    }
-    
-    //output processed signal
-    output(pushDouble(signal));
-    return true;
+    //push signal regardless of bypass to update the filter
+    double output = pushDouble(signal);
+
+	//return filtered signal or original based on bypass state
+    return (params[BYPASS] >= 1.) ? signal : output;
 }
 
 void Filter::setOrder(int order){
     
+	if (order == registers.size() || order <= 0)
+		return;
+
     //array to copy into
     circular_stack<double>newRegs(order);
    
-    //making registers smaller
-    if(order < this->registers.size()){
-        
-        for(int reg = 0; reg < newRegs.size(); reg++){
-            newRegs[reg] = registers[reg];
-        }
-        for(int i = order; i < registers.size(); i++){
-			params.erase(std::to_string(i + 1));
-        }
-        
-    }
+	//copy register values
+	newRegs << registers;
 
-    //making registers larger
-    else if(order > this->registers.size()){
-        
-        for(int reg = 0; reg < registers.size(); reg++){
-            newRegs[reg] = registers[reg];
-        }
-        for(int i = registers.size(); i < order; i++){
-			newRegs[i] = 0.;
-            params[std::to_string(i + 1)].setParameter(1.0);
-        }
-    }
+	params.resize((size_t)order + 2);
 
-    //same number of registers, do nothing
-    else{
-        return;
-    }
-    
-    //set registers to new array, deallocate old array, set regStart index
-    registers = newRegs;
-    
+	//set current registers to newRegs
+	registers = newRegs;
 }
 
 bool Filter::setCoefficient(int reg, double coefficient){
@@ -123,13 +85,15 @@ bool Filter::setCoefficient(double coefficient, int reg){
     if(reg < 0 || reg > registers.size()){
         return false;
     }
-    params[std::to_string(reg)].setParameter(coefficient);
+
+    params[COEFFICIENTS + reg] = coefficient;
+
     return true;
 }
 
 void Filter::printCoefficients(std::ostream &os){
     for(int coe = 0; coe <= registers.size(); coe++){
-        os << (double)(params[std::to_string(coe)]) << ' ';
+        os << (double)(params[COEFFICIENTS + coe]) << ' ';
     }
 }
 

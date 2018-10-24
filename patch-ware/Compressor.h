@@ -13,7 +13,7 @@
 #ifndef COMPRESSOR_H
 #define	COMPRESSOR_H
 
-#include "Effect.h"
+#include "SignalProcessor.h"
 
 /* ************************************************************************
  * Class:   Compressor
@@ -23,7 +23,7 @@
  * boosted such that the threshold maximum value for a compressed sig nal will
  * output as the maximum value for the signal.
  ************************************************************************** */
-class Compressor : public Effect{
+class Compressor : public SignalProcessor{
     
     /* **********************************************************************
      * 
@@ -46,13 +46,20 @@ public:
     /* **********************************************************************
      *                          Accessors
      ********************************************************************** */
-    bool process();
+    double processSignal(const double &);
     
     
     /* **********************************************************************
      *                          Mutators
      ********************************************************************** */
     
+	enum parameter {
+		BYPASS = 0,
+		MAX,
+		THRESH,
+		BUFFER,
+		NUM_PARAMS
+	};
     
 protected:
     

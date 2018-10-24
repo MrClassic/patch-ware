@@ -9,6 +9,8 @@
  *		8/16/18
  *		Happy Birthday Wifey!!!
  *		implemented Parameterizable interface
+ *		10/10/18
+ *		Changed to implement the WaveProcessor interface
  ********************************************************************* */
 
 #include "QuadraticWaveGenerator.h"
@@ -17,29 +19,23 @@ QuadraticWaveGenerator::QuadraticWaveGenerator(){ /* Do Nothing */ }
 
 QuadraticWaveGenerator::QuadraticWaveGenerator(double frequency){
 	//set frequency
-    params["frequency"] = frequency;
+    params[FREQUENCY] = frequency;
 }
 
 QuadraticWaveGenerator::QuadraticWaveGenerator(const QuadraticWaveGenerator& orig) {
-	//copy stuff over to new Quadratic Wave Generator
-	currentTime = orig.currentTime;
-	copyParameters(orig);
+	//do nothing
 }
 
 QuadraticWaveGenerator::~QuadraticWaveGenerator() { /* do nothing...? */ }
 
-bool QuadraticWaveGenerator::process(){
+void QuadraticWaveGenerator::updateWaveOffset() {
+	//TODO: calculate wave offset for quadractic waves
+}
 
-	//check parameters
-    if(!*this){
-        return false;
-    }
+double QuadraticWaveGenerator::generate(){
 
-	//output current wave value
-    double signal = 2 * (double)params["amplitude"] * sqrt(params["frequency"] * getPhaseOffset()) - (double)params["amplitude"];
-    output(signal);
-
-	//success
-    return true;
+	//return current wave value
+    return 2. * params[AMPLITUDE] * sqrt(params[FREQUENCY] * getPhaseOffset()) - params[AMPLITUDE];
+    
 }
 

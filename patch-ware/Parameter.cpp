@@ -10,23 +10,33 @@
 #include "Parameter.h"
 
 Parameter::Parameter() {
-    this->param = 0.;
+    this->param = NULL;
     patched = false;
 }
 
-Parameter::Parameter(double param){
+Parameter::Parameter(double * const  param){
     this->param = param;
     patched = false;
 }
 
+void Parameter::setPtr(double * const ptr) {
+	param = ptr;
+}
+
+double* Parameter::getPtr() const {
+	return param;
+}
+
 bool Parameter::setParameter(const double param) {
+	if (param == NULL)
+		return false;
     if (patched) {
 		if (!isReady())
 			return false;
-        this->param = input();
+        *this->param = input();
 		return true;
     } else {
-        this->param = param;
+        *this->param = param;
         return true;
     }
 }
@@ -50,11 +60,13 @@ bool Parameter::isPatched() const{
 }
 
 bool Parameter::process() {
+	if (param == NULL)
+		return false;
 	if (isPatched()) {
 		if (!isReady()) {
 			return false;
 		}
-		param = input();
+		*param = input();
 	}
 	return true;
 }
@@ -65,41 +77,59 @@ Parameter& Parameter::operator=(const double rhs){
     return *this;
 }
 Parameter& Parameter::operator+=(const double rhs){
-    setParameter(rhs + param);
+    setParameter(rhs + *param);
     return *this;
 }
 Parameter& Parameter::operator-=(const double rhs){
-    setParameter(param - rhs);
+    setParameter(*param - rhs);
     return *this;
 }
 
 double Parameter::operator+(const double rhs) const{
-    return param + rhs;
+	if (param == NULL)
+		return rhs;
+    return *param + rhs;
 }
 double Parameter::operator-(const double rhs) const{
-    return param - rhs;
+	if (param == NULL)
+		return rhs * -1.;
+    return *param - rhs;
 }
 double Parameter::operator*(const double rhs) const{
-    return param * rhs;
+	if (param == NULL)
+		return 0.;
+    return *param * rhs;
 }
 double Parameter::operator/(const double rhs) const{
-    return param / rhs;
+	if (param == NULL)
+		return 0.;
+    return *param / rhs;
 }
 
 bool Parameter::operator==(const double rhs) const {
-    return param == rhs;
+	if (param == NULL)
+		return false;
+    return *param == rhs;
 }
 bool Parameter::operator<(const double rhs) const {
-    return param < rhs;
+	if (param == NULL)
+		return false;
+    return *param < rhs;
 }
 bool Parameter::operator>(const double rhs) const {
-    return param > rhs;
+	if (param == NULL)
+		return false;
+    return *param > rhs;
 }
 bool Parameter::operator<=(const double rhs) const {
-    return param <= rhs;
+	if (param == NULL)
+		return false;
+    return *param <= rhs;
 }
 bool Parameter::operator>=(const double rhs) const {
-    return param >= rhs;
+	if (param == NULL)
+		return false;
+    return *param >= rhs;
 }
 
 Parameter& Parameter::operator=(const bool rhs){
@@ -123,58 +153,82 @@ Parameter& Parameter::operator=(Parameter &rhs){
 		}
 	}
 	else {
-		setParameter(rhs.param);
+		setParameter(*rhs.param);
 	}
     return *this;
 }
 Parameter& Parameter::operator+=(const Parameter &rhs){
-    setParameter(param + rhs.param);
+    setParameter(*param + *rhs.param);
     return *this;
 }
 Parameter& Parameter::operator-=(const Parameter &rhs){
-    setParameter(param - rhs.param);
+    setParameter(*param - *rhs.param);
     return *this;
 }
 
 double Parameter::operator+(const Parameter &rhs) const{
-    return param + rhs.param;
+	if (param == NULL)
+		return rhs;
+    return *param + *rhs.param;
 }
 double Parameter::operator-(const Parameter &rhs) const{
-    return param - rhs.param;
+	if (param == NULL)
+		return rhs * -1.;
+    return *param - *rhs.param;
 }
 double Parameter::operator*(const Parameter &rhs) const{
-    return param * rhs.param;
+	if (param == NULL)
+		return 0.;
+    return *param * *rhs.param;
 }
 double Parameter::operator/(const Parameter &rhs) const{
-    return param / rhs.param;
+	if (param == NULL)
+		return 0.;
+    return *param / *rhs.param;
 }
 
 bool Parameter::operator==(const Parameter &rhs) const {
-    return param == rhs.param;
+	if (param == NULL)
+		return false;
+    return *param == *rhs.param;
 }
 bool Parameter::operator<(const Parameter &rhs) const {
-    return param < rhs.param;
+	if (param == NULL)
+		return false;
+    return *param < *rhs.param;
 }
 bool Parameter::operator>(const Parameter &rhs) const {
-    return param > rhs.param;
+	if (param == NULL)
+		return false;
+    return *param > *rhs.param;
 }
 bool Parameter::operator<=(const Parameter &rhs) const {
-    return param <= rhs.param;
+	if (param == NULL)
+		return false;
+    return *param <= *rhs.param;
 }
 bool Parameter::operator>=(const Parameter &rhs) const {
-    return param >= rhs.param;
+	if (param == NULL)
+		return false;
+    return *param >= *rhs.param;
 }
 
 Parameter::operator bool() const {
-    return param > 0.;
+	if (param == NULL)
+		return false;
+    return *param > 0.;
 }
 
 Parameter::operator int() const {
-	return (int)param;
+	if (param == NULL)
+		return 0;
+	return (int)*param;
 }
 
 Parameter::operator double() const{
-    return param;
+	if (param == NULL)
+		return 0.;
+    return *param;
 }
 
 bool Parameter::addInput(Patch * const patch) {

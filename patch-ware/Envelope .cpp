@@ -12,17 +12,21 @@
 */
 #include "Envelope.h"
 
-//default constructor, sets up default parameters and variables
 Envelope::Envelope() {
+	proc = NULL;
+}
 
-	//boolean for whether the envelope is activated or not
-	on = false;
+//default constructor, sets up default parameters and variables
+Envelope::Envelope(EnvelopeProcessor* eProc) {
 
-	reset = false;//ignore duplicate threshold triggers
+	proc = eProc;
 
 	//define general envelpoe parameters
+	addParameter("duration", proc->paramAddr(EnvelopeProcessor::DURATION));
 	params["duration"] = 0.5; //duration in seconds
+	addParameter("base", proc->paramAddr(EnvelopeProcessor::BASE));
 	params["base"] = 0.; //base signal, output when envelope is not active
+	addParameter("threshold", proc->paramAddr(EnvelopeProcessor::THRESH));
 	params["threshold"] = 1.; //activation threshold
 
 }
@@ -30,27 +34,6 @@ Envelope::Envelope() {
 //copies parameters
 Envelope::Envelope(const Envelope &rhs) {
 	copyParameters(rhs);
-}
-
-//overloaded Timer::incremntTime:
-//ignores the time signal if the envelope is not active,
-//updates the time if the envelope is active.
-void Envelope::incrementTime(const double time) {
-	if (!on) {
-		//if not activated, ignore time change
-		return;
-	}
-	if (currentTime + time > (double)params["duration"]) {
-		//if envelope function ending, reset time and
-		//turn off the envelope
-		currentTime = 0.;
-		on = false;
-	}
-	else {
-		//envelope is active and the time is within
-		//the envelope function domain, business as usual.
-		currentTime += time;
-	}
 }
 
 //implemented process method, calls abstract method:
@@ -68,25 +51,15 @@ bool Envelope::process() {
 	updateParameters();
 
 	double signal = input();//input signal
-	double out = params["base"];//output signal
 
-	//test envelope activation
-	if (!on || reset) {
-		if (signal >= (double)params["threshold"]) {
-			//threshold exceeded, activate envelope
-			on = true;
-			currentTime = 0.;
-		}
-	}
+	output(proc->processSignal(signal));//process and output
 
-	//if active, process envelope output
-	if (on) {
-		out = envelope(signal);//<--- virtual function 
-								//		define in sub-class
-	}
-
-	output(out);
-	return true;
+	return true; 
 }
+
+void Envelope::incrementTime(const double time) {
+	proc->frameRate = time;
+}
+
 
 //EOF

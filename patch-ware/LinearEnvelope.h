@@ -3,17 +3,17 @@
 #ifndef LINEAR_ENVELOPE_H
 #define LINEAR_ENVELOPE_H
 
-#include "Envelope.h"
+#include "EnvelopeProcessor.h"
 
 
-class LinearEnvelope : public Envelope {
+class LinearEnvelope : public EnvelopeProcessor {
 
 public:
 	//sets the base = 0 and threshold = 1
 	LinearEnvelope();
 protected:
 	//linear decay envelope
-	double envelope(double const signal);
+	double envelope();
 
 };
 #endif

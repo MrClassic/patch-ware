@@ -26,8 +26,12 @@ class Parameter : public InputDevice{
     
 public:
     Parameter();
-    Parameter(double param);
+    Parameter(double * const param);
     
+	void setPtr(double * const ptr);
+
+	double* getPtr() const ;
+
     bool setParameter(const double param);
     
     void disconnect();
@@ -78,10 +82,10 @@ public:
     
     bool removeInput(Patch * const patch);
     
-    friend class SineWaveGenerator;
+    //friend class SineWaveGenerator; shouldnt need this...
     
 private:
-    double param;
+    double* param;
     bool patched;
 };
 

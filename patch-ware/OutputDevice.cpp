@@ -130,7 +130,7 @@ bool OutputDevice::outputToPatches(Patch* patch, void* arg) {
     double* signal = (double*) arg;
 	if (!*patch)
 		return patch->pushSignal(*signal);
-	
+	return false;
 }
 
 /*

@@ -28,6 +28,7 @@
 #include "OutputDevice.h"
 #include "Parameterizable.h"
 #include "Timer.h"
+#include "WaveProcessor.h"
 
 class Parameter;
 
@@ -46,15 +47,19 @@ class WaveGenerator : public OutputDevice, public Parameterizable, public Timer{
      ************************************************************** */
 public:
     
+	WaveGenerator(){
+		proc = NULL;
+	}
+
     /** ********************************************************************
      * Default Constructor
      * Initializes phase corrector and current time to zero (0).
      ******************************************************************** */
-    WaveGenerator(){
-		phaseCorrecter = 0.;
-		addParameter("frequency");
-		addParameter("amplitude");
-		addParameter("phase");
+    WaveGenerator(WaveProcessor * const processor){
+		proc = processor;
+		addParameter("frequency", proc->paramAddr(WaveProcessor::FREQUENCY));
+		addParameter("amplitude", proc->paramAddr(WaveProcessor::AMPLITUDE));
+		addParameter("phase", proc->paramAddr(WaveProcessor::PHASE));
 		params["frequency"] = 1.0;
 		params["amplitude"] = 1.0;
 		params["phase"] = 0.0;
@@ -79,7 +84,16 @@ public:
      * Post-condition:  A double value is returned representing the displacement
      *                  of the wave at its current time.
      ******************************************************************* */
-    virtual bool process()=0;
+	virtual bool process() {
+		if (!paramsReady()) {
+			return false;
+		}
+		if (proc != NULL) {
+			proc->process();
+			return true;
+		}
+		return false;
+	}
     
     /* *****************************************************************
      * Get Frequency: Accessor for this wave generator's frequency parameter. 
@@ -114,6 +128,10 @@ public:
         return params["phase"];
     }
 
+	void incrementTime(const double time) {
+		proc->frameRate = time;
+	}
+
 	bool setParameter(const std::string &tag, const double value) {
 		if (tag == "frequency") {
 			setFrequency(value);
@@ -139,10 +157,8 @@ public:
      *                  be larger than 0.
      * Post-condition:  The frequency for the Wave Generator will be set.
      ********************************************************************** */
-    virtual void setFrequency(const double frequency){
-		Parameter &fr = params["frequency"];
-		lastFrequency = (double)fr;
-		fr.setParameter(frequency);
+    virtual bool setFrequency(const double frequency){
+		return params["frequency"].setParameter(frequency);
     };
     
     /* *********************************************************************
@@ -154,10 +170,8 @@ public:
      * Pre-condition:   The parameter should be initialized.
      * Post-condition:  The amplitude for the Wave Generator will be set.
      ********************************************************************** */
-    virtual void setAmplitude(const double amplitude){
-        Parameter &a = params["amplitude"];
-		lastAmplitude = (double)a;
-		a.setParameter(amplitude);
+    virtual bool setAmplitude(const double amplitude){
+		return params["amplitude"].setParameter(amplitude);
     };
     
     /* ********************************************************************
@@ -169,10 +183,8 @@ public:
      * Post-condition:  The phase and lastPhase of the wave generator will be 
      * updated.
      ******************************************************************** */
-    virtual void setPhase(const double phase){
-		Parameter &ph = params["phase"];
-        lastPhase = (double)ph;
-        ph.setParameter(phase);
+    virtual bool setPhase(const double phase){
+		return params["phase"].setParameter(phase);
     };
     
     /* ********************************************************************
@@ -180,7 +192,7 @@ public:
      * generator of how much time has elapsed per frequency periods.
      * Pre-condition:   The time parameter should be initialized.
      * Post-condition:  The current time variable will be updated.
-     ********************************************************************* */
+     ********************************************************************* 
     virtual void incrementTime(const double time){
         currentTime += time;
 		const double freq = params["frequency"];
@@ -191,13 +203,24 @@ public:
             currentTime += (1. / freq);
         }
     }
+	!!!! probably wont need !!!!
+	*/
     
     /* ********************************************************************
      * Update Wave Offset [pure virtual]: Calculates the phase corrector
      * variable. The process of doing this may depend on the wave being 
      * implemented, so the this function is left pure virtual.
      ******************************************************************** */
-    virtual void updateWaveOffset()=0;
+	void updateWaveOffset() {
+		if (proc != NULL) {
+			proc->updateWaveOffset();
+		}
+	}
+
+	/*
+	Accessor for this WaveGenerator's processor
+	*/
+	WaveProcessor* getProc() { return proc; }
     
     /* ********************************************************************
      * Get Phase Offset: Calculates and returns the effective wave phase 
@@ -209,20 +232,9 @@ public:
      * Post-condition:  The effective phase is returned.
      ******************************************************************** */
     double getPhaseOffset() {
-        
-        if((double)params["frequency"] == 0.){
-            return 0.;
-        }
-        
-        updateWaveOffset();
-        double out = (params["phase"] + phaseCorrecter);
-        while(out > (1.)){
-            out -= (1.);
-        }
-        while(out < 0.){
-            out += (1.);
-        }
-        return out;
+		if (proc == NULL)
+			return 0.;
+		return proc->getPhaseOffset();
     }
     
     /* ********************************************************************
@@ -249,14 +261,8 @@ public:
     
 protected:
     
-    //member variables
-    //double currentTime; //current time between 0 and frequency
-    double lastFrequency;
-    double lastAmplitude;
-    double lastPhase;
-    double phaseCorrecter; //double for phase correction when switching
-                            //frequencies
-    //double amplitudeEnvelope;
+	WaveProcessor *proc;
+
 };
 
 #endif	/* WAVEGENERATOR_H */

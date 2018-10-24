@@ -21,12 +21,13 @@ bool Parameterizable::setParameter(const std::string &tag, const double value) {
 	return true;
 }
 
-bool Parameterizable::addParameter(const std::string &tag) {
+bool Parameterizable::addParameter(const std::string &tag, double * const ptr) {
 	if (hasParameter(tag)) {
 		return false;
 	}
 	//params[tag]; now done in next line
 	paramsList.push_back(&params[tag]);
+	params[tag].setPtr(ptr);
 	return true;
 }
 

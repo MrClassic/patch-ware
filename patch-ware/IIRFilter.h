@@ -77,6 +77,8 @@ public:
      ********************************************************************* */
     double pushDouble(double signal);
     
+	friend class BiquadFilter;
+
 private:
 
 };

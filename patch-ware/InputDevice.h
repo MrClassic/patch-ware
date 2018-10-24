@@ -14,19 +14,13 @@
 #include "LinkedList.h"
 #include "PatchDevice.h"
 #include "Patch.h"
+#include "InputTypes.h"
 //#include "Circuit.h"
 
 #ifndef NULL
 #define NULL 0x0
 #endif
 
-enum input_type {
-    SUM = 0,
-    AVERAGE,
-    PRODUCT,
-    MAX,
-    MIN
-};
 
 class Circuit;
 class Patch;
@@ -40,6 +34,8 @@ class InputDevice : public virtual PatchDevice{
     
 public:
     
+	friend class Patch;
+
     InputDevice();
     
     InputDevice(Patch * const patch);
@@ -62,7 +58,7 @@ public:
 
 	LinkedList<Patch> getInputPatches();
     
-    void setInputType(input_type in);
+    virtual void setInputType(input_type in);
     
  /* ****************************************************************
  *                  Protected Section

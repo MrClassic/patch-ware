@@ -20,48 +20,35 @@
 
 Distortion::Distortion() {
 
+	params.resize(NUM_PARAMS);
+
 	//set parameters to defaults
-	addParameter("threshold");
-    params["threshold"] = 1.;
+    params[THRESH] = 1.;
 
 }
 
-Distortion::Distortion(const Distortion& orig) {
-	//copy parameters
-	copyParameters(orig);
+Distortion::Distortion(const Distortion& orig) : SignalProcessor(orig) {
+	//do nothing...?
 }
 
 Distortion::~Distortion() {/* Do nothing */}
 
-bool Distortion::process(){
+double Distortion::processSignal(const double &signal){
 
-	//check for ready state
-    if(!*this || !parametersReady()){
-        return false;
-    }
-
-	//update parameters
-	updateParameters();
-
-	//get input signal
-    double signal = input();
-	if (params["bypass"]) {
-		output(signal);
+	if (params[BYPASS] >= 1.) {
+		return signal;
 	}
-	double thresh = params["threshold"];
 
 	//run distortion algorithm
-    if(signal > 0. && pw_abs(thresh) < signal){
-        output(thresh);
+    if(signal > 0. && pw_abs(params[THRESH]) < signal){
+        return params[THRESH];
     }
-    else if(signal < 0. && pw_abs(thresh) < signal * -1.){
-        output((thresh * -1.));
+    else if(signal < 0. && pw_abs(params[THRESH]) < signal * -1.){
+        return params[THRESH] * -1.;
     }
     else{
-        output(signal);
+        return signal;
     }
 
-	//success!
-    return true;
 }
 

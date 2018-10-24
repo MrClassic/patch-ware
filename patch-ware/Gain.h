@@ -12,16 +12,22 @@
 #ifndef GAIN_H
 #define	GAIN_H
 
-#include "Effect.h"
+#include "SignalProcessor.h"
 
-class Gain : public Effect{
+class Gain : public SignalProcessor{
 public:
     Gain();
     Gain(const Gain& orig);
     virtual ~Gain();
     
-    virtual bool process();
+    virtual double processSignal(const double &);
     
+	enum parameter {
+		BYPASS = 0,
+		LEVEL,
+		NUM_PARAMS
+	};
+
 private:
 
 };

@@ -8,14 +8,16 @@ Log:
 		basic implementation implemented
 	8/15/18
 		implemented Parameterizable interface
+	10/9/18
+		changed to implement the WaveGenerator interface
 */
 
-#ifndef PULSE_H
-#define PULSE_H
+#ifndef PULSEGEN_H
+#define PULSEGEN_H
 
 #include "WaveGenerator.h"
 
-class PulseGenerator : public WaveGenerator {
+class PulseGenerator : public WaveProcessor {
 
 public:
 
@@ -27,46 +29,24 @@ public:
 	}
 
 	/*
-	Overloaded virtual method incrementTime, checks for time overflow and sets the pulse boolean.
-	time overflow means the wave has started over, thus its ready to send it's pulse signal again.
-	*/
-	void incrementTime(const double time) {
-		//update pulse boolean if wave repeats (time overflows)
-		if (currentTime + time > (1. / (double)params["frequency"])) {
-			pulse = true;
-		}
-		//increment time via standard wave generator
-		WaveGenerator::incrementTime(time);
-	}
-
-	/*
-	Updates the wave offset to ensure the wave stays continuous
-	*/
-	void updateWaveOffset() {
-		currentTime = (params["frequency"] * currentTime) / lastFrequency;
-	}
-
-	/*
-	Push Double, sends the amplitude of the wave if the pulse is ready,
+	generate, sends the amplitude of the wave if the pulse is ready,
 	or 0 if the pulse is not ready.
 	*/
-	bool process() {
-		//check parameters
-		if (!paramsReady()) {
-			return false;
-		}
+	double generate() {
+		
+		//update time through fluxuating frequency
+		if(params[FREQUENCY] != lastFreq)
+			currentTime = (params[FREQUENCY] * currentTime) / lastFreq;
 
 		if (pulse) {
 			//pulse ready, output signal for one frame
 			pulse = false;
-			params["amplitude"].process();
-			output((double)params["amplitude"]);
+			return params[AMPLITUDE];
 		}
 		else {
 			//output 0 if pulse is not ready
-			output(0.);
+			return 0.;
 		}
-		return true;
 	}
 
 private:
