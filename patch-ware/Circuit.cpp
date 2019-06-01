@@ -1,5 +1,5 @@
 /*
-File:	Circuit.h
+File:	Circuit.cpp
 Author:	Nate Gallegos
 
 Log:
@@ -19,11 +19,18 @@ Log:
 		add incrementTime() to support on board wave generators
 		8/17/18
 		implemented Timer/Parameterizable update
+
+TO DO:
+		Deep copies!!!!
+		nested Circuits!!
+		Remove devices
 */
 #include "Circuit.h"
 
 Circuit::Circuit() {
 	level = 0;
+	firstPatches.reserve(20);
+	lastPatches.reserve(20);
 }
 
 Circuit::Circuit(const Circuit &other) {
@@ -375,7 +382,7 @@ bool Circuit::unpatch(const std::string &output, const std::string &input) {
 	int oSize = parse(output, oStrings); // <--- creates string[] on heap !!!!!
 
 
-										 //valid results from parsing strings
+	//valid results from parsing strings
 	if (pw_abs(iSize - oSize) > 1) {
 		//devices too different in scope
 		//i.e. input = "myCircuit:myWaveGen:frequency"
@@ -735,7 +742,7 @@ void Circuit::optimize() {
 	changed = false;
 }
 
-ProcessorCluster* Circuit::exportAsPrcoessor() {
+ProcessorCluster* Circuit::exportAsProcessor() {
 
 	//make sure the circuit patching is up to date
 	optimize();
@@ -746,6 +753,11 @@ ProcessorCluster* Circuit::exportAsPrcoessor() {
 	//holds the processing order for the new Processor Cluster
 	LinkedList<Processor> procs;
 
+	//func is a horrible name for a lambda function...
+	//this one populates a map for associating 
+	//each PatchDevice with their Processor.
+	//This map will be used later for quickly looking
+	//up a Processor from a PatchDevice.
 	auto func = [](PatchDevice* p, void *arg)->bool {
 		std::map<PatchDevice*, Processor*>* map = (std::map<PatchDevice*, Processor*>*)arg;
 
@@ -811,6 +823,10 @@ ProcessorCluster* Circuit::exportAsPrcoessor() {
 	cluster->outputMappings.resize(lastPatches.size());
 	cluster->outputs.resize(getOutputCount());
 
+	//link is a slightly better lambda function name...
+	//This function "links" the Processors' pointers
+	//together, bypassing the need for patches to
+	//carry the signal from Processor to Processor.
 	auto link = [](Patch* p, void* arg)->bool {
 
 		//convert argument
@@ -820,6 +836,10 @@ ProcessorCluster* Circuit::exportAsPrcoessor() {
 			Patch* patch;
 			int index;
 		};
+
+		//basic search function, finds the index of a patch*
+		//specified by the _data structure, and sets the index
+		//within the stucture to the index of the found Pacth*
 		auto find = [](Patch* pd, void* arg)->bool {
 			_data* d = (_data*)arg;
 			++(d->index);
@@ -890,6 +910,12 @@ ProcessorCluster* Circuit::exportAsPrcoessor() {
 				iProc = env->getProc();
 			}
 
+			//handle Ciruit
+			Circuit* circ = dynamic_cast<Circuit*>(p->getInput());
+			if (circ != NULL) {
+				iProc = circ->exportAsProcessor();
+			}
+
 		}
 
 		if (p->getOutput() != NULL) {
@@ -913,6 +939,13 @@ ProcessorCluster* Circuit::exportAsPrcoessor() {
 			if (param != NULL) {
 				in = param->getPtr();
 			}
+
+			//handle Circuit
+			Circuit* circ = dynamic_cast<Circuit*>(p->getOutput());
+			if (circ != NULL) {
+				oProc = circ->exportAsProcessor();
+			}
+
 		}
 
 		if (iIndex != -1) {

@@ -16,8 +16,10 @@
 #include <fstream>
 #include <string>
 #include <exception>
-#include <fftw3.h>
+//#include <fftw3.h>
 #include <chrono>
+#include <iostream>
+#include <filesystem>
 
 #include "RtAudio.h"
 
@@ -55,6 +57,8 @@
 
 #include "Parser.h"
 
+#include "Biquad.h"
+
 /*
 void playSound(){
     int freq[] = { // C   D    E    F    G    A    B    C 
@@ -71,7 +75,7 @@ void playSound(){
 }
 */
 
-//Circuit* fileToCircuit(const std::string &);
+//Globals
 
 void print(double in){
     std::cout << in;
@@ -148,6 +152,64 @@ void filterTester(){
     delete filter;
     
 }
+/*
+void fftwTest() {
+
+	const int SIZE = 32;
+	const int REAL = 0;
+	const int IMAG = 1;
+	fftw_complex input[SIZE];
+	fftw_complex output[SIZE];
+
+	double result;
+	SineWaveGenerator* sine = new SineWaveGenerator;
+	sine->addToOutputs(&result);
+	sine->frameRate = 32;
+	*(sine->paramAddr(sine->FREQUENCY)) = 1.0;
+	*(sine->paramAddr(sine->AMPLITUDE)) = 1.0;
+	*(sine->paramAddr(sine->PHASE)) = 0.0;
+
+	for (int i = 0; i < SIZE; i++) {
+		sine->process();
+		input[i][REAL] = result;
+		input[i][IMAG] = 0.0;
+	}
+
+	fftw_plan plan = fftw_plan_dft_1d(SIZE, input, output, FFTW_FORWARD, FFTW_ESTIMATE);
+
+	fftw_execute(plan);
+
+	fftw_destroy_plan(plan);
+
+	fftw_cleanup();
+
+	for (int i = 0; i < SIZE; i++) {
+		output[i][REAL] /= SIZE;
+		output[i][IMAG] /= SIZE;
+	}
+
+	print("input:\n");
+	for (int i = 0; i < SIZE; i++) {
+		print("   ");
+		print(input[i][REAL]);
+		print(" ");
+		print(input[i][IMAG]);
+		print("i\n");
+
+	}
+
+	print("\n\noutput:\n");
+	for (int i = 0; i < SIZE; i++) {
+		print("   ");
+		print(output[i][REAL]);
+		print(" ");
+		print(output[i][IMAG]);
+		print("i\n");
+	}
+
+	std::cin.get();
+}
+*/
 /*
 void waveTester(){
     WaveGenerator *waveMaker;
@@ -1018,111 +1080,22 @@ void rtAudioTest() {
 
 	//number of channels
 	const unsigned int CHANNELS = 1;
-	unsigned int bufferFrames = 512;
+	unsigned int bufferFrames = 1;
 
 	double* _inputs[CHANNELS];
 	double _outputs[CHANNELS];
 
 	LinkedList<Processor> proc_master;
-
-	//input patches for interfacing with RT Audio
-	Patch* inputs[CHANNELS];// = new Patch*;
-
-	//output patches for interfacing with RT Audio
-	Patch* outputs[CHANNELS];// = new Patch*;
-
-	//master circuit
-	Circuit* master = new Circuit;
-
-	//create patches and patch them into master circuit
-	for (int channel = 0; channel < CHANNELS; channel++) {
-		inputs[channel] = new Patch;
-		outputs[channel] = new Patch;
-		//g0.addInput(inputs[channel]);
-		//g0.addOutput(outputs[channel]);
-
-		master->addInput(inputs[channel]);
-		master->addOutput(outputs[channel]);
-	}
-
 	
-	SineWaveGenerator* sine0 = new SineWaveGenerator;
-	sine0->frameRate = 48000;
-	proc_master.push_back(sine0);
-	WaveGenerator* wgSine0 = new WaveGenerator(sine0);
-	wgSine0->setParameter("frequency", 0.5);
-	wgSine0->setParameter("amplitude", 0.5);
-	wgSine0->setParameter("phase", 0.0);
-	master->addDevice("sine0", wgSine0);
-
-	SineWaveGenerator *sine1 = new SineWaveGenerator;
-	sine1->frameRate = 48000;
-	proc_master.push_back(sine1);
-	WaveGenerator* wgSine1 = new WaveGenerator(sine1);
-	wgSine1->setParameter("amplitude", 1.0);
-	wgSine1->setParameter("phase", 0.0);
-	master->addDevice("sine1", wgSine1);
-
-	ZeroWaveGenerator* zero0 = new ZeroWaveGenerator;
-	proc_master.push_back(zero0);
-	WaveGenerator* wgZero0 = new WaveGenerator(zero0);
-	wgZero0->setParameter("amplitude", 1.5);
-	master->addDevice("zero0", wgZero0);
-
-	ZeroWaveGenerator* zero1 = new ZeroWaveGenerator;
-	proc_master.push_back(zero1);
-	WaveGenerator* wgZero1 = new WaveGenerator(zero1);
-	wgZero1->setParameter("amplitude", 440.);
-	master->addDevice("zero1", wgZero1);
-
-	Gain* adder = new Gain;
-	proc_master.push_back(adder);
-	Effect* eAdder = new Effect(adder);
-	eAdder->addParameter("level", adder->paramAddr(Gain::LEVEL));
-	eAdder->setParameter("level", 1.5);
-	master->addDevice("adder", eAdder);
-	adder->setInputType(input_type::SUM);
-
-	Gain* mult = new Gain;
-	proc_master.push_back(mult);
-	Effect* eMult = new Effect(mult);
-	eMult->addParameter("level", mult->paramAddr(Gain::LEVEL));
-	eMult->setParameter("level", 1.0);
-	master->addDevice("mult", eMult);
-	mult->setInputType(input_type::PRODUCT);
-
-	Gain* mute = new Gain;
-	proc_master.push_back(mute);
-	Effect* eMute = new Effect(mute);
-	eMute->addParameter("level", mute->paramAddr(Gain::LEVEL));
-	eMute->setParameter("level", 0.0);
-	master->addDevice("mute", eMute);
-	mute->setInputType(input_type::PRODUCT);
-
-	Gain* combine = new Gain;
-	proc_master.push_back(combine);
-	Effect* eCombine = new Effect(combine);
-	eCombine->addParameter("level", combine->paramAddr(Gain::LEVEL));
-	eCombine->setParameter("level", 1.0);
-	master->addDevice("combine", eCombine);
-	combine->setInputType(input_type::SUM);
-
-	//simple bypass circuit
-	master->patch("in:0", "mute");
-	master->patch("sine0", "adder");
-	master->patch("zero0", "adder");
-	master->patch("adder", "mult");
-	master->patch("zero1", "mult");
-	master->patch("mult", "sine1:frequency");
-	master->patch("mute", "combine");
-	master->patch("sine1", "combine");
-	master->patch("combine", "out:0");
-	//master->patch("g1", "out:1");
-	//master->patch("wave", "dist:level");
-
-	master->optimize();
-
-	ProcessorCluster* pc = master->exportAsPrcoessor();
+	Circuit* generated = fileToCircuit("C:\\GitHub\\patch-ware\\patch-ware\\CheapReverb.xml");
+	if (generated == NULL) {
+		error("there was a problem somewhere...");
+		std::cin.get();
+		return;
+	}
+	generated->optimize();
+	ProcessorCluster* pc = generated->exportAsProcessor();
+	//ProcessorCluster* pc = master->exportAsPrcoessor();
 	for (int channel = 0; channel < CHANNELS; ++channel) {
 		_inputs[channel] = pc->inputAddr(channel);
 		pc->setOutputChannel(channel, &_outputs[channel]);
@@ -1198,10 +1171,7 @@ void rtAudioTest() {
 	//*****************************************
 
 CLEANUP:
-	for (int channel = 0; channel < CHANNELS; channel++) {
-		delete inputs[channel];
-		delete outputs[channel];
-	}
+	
 	proc_master.clear(true);
 	//delete[] inputs;
 	//delete[] outputs;
@@ -1240,86 +1210,16 @@ void timeTest() {
 	}
 
 
-	SineWaveGenerator* sine0 = new SineWaveGenerator;
-	sine0->frameRate = 48000;
-	proc_master.push_back(sine0);
-	WaveGenerator* wgSine0 = new WaveGenerator(sine0);
-	wgSine0->setParameter("frequency", 0.5);
-	wgSine0->setParameter("amplitude", 0.5);
-	wgSine0->setParameter("phase", 0.0);
-	master->addDevice("sine0", wgSine0);
 
-	SineWaveGenerator *sine1 = new SineWaveGenerator;
-	sine1->frameRate = 48000;
-	proc_master.push_back(sine1);
-	WaveGenerator* wgSine1 = new WaveGenerator(sine1);
-	wgSine1->setParameter("amplitude", 1.0);
-	wgSine1->setParameter("phase", 0.0);
-	master->addDevice("sine1", wgSine1);
-
-	ZeroWaveGenerator* zero0 = new ZeroWaveGenerator;
-	proc_master.push_back(zero0);
-	WaveGenerator* wgZero0 = new WaveGenerator(zero0);
-	wgZero0->setParameter("amplitude", 1.5);
-	master->addDevice("zero0", wgZero0);
-
-	ZeroWaveGenerator* zero1 = new ZeroWaveGenerator;
-	proc_master.push_back(zero1);
-	WaveGenerator* wgZero1 = new WaveGenerator(zero1);
-	wgZero1->setParameter("amplitude", 440.);
-	master->addDevice("zero1", wgZero1);
-
-	Gain* adder = new Gain;
-	proc_master.push_back(adder);
-	Effect* eAdder = new Effect(adder);
-	eAdder->addParameter("level", adder->paramAddr(Gain::LEVEL));
-	eAdder->setParameter("level", 1.5);
-	master->addDevice("adder", eAdder);
-	adder->setInputType(input_type::SUM);
-
-	Gain* mult = new Gain;
-	proc_master.push_back(mult);
-	Effect* eMult = new Effect(mult);
-	eMult->addParameter("level", mult->paramAddr(Gain::LEVEL));
-	eMult->setParameter("level", 1.0);
-	master->addDevice("mult", eMult);
-	mult->setInputType(input_type::PRODUCT);
-
-	Gain* mute = new Gain;
-	proc_master.push_back(mute);
-	Effect* eMute = new Effect(mute);
-	eMute->addParameter("level", mute->paramAddr(Gain::LEVEL));
-	eMute->setParameter("level", 0.0);
-	master->addDevice("mute", eMute);
-	mute->setInputType(input_type::PRODUCT);
-
-	Gain* combine = new Gain;
-	proc_master.push_back(combine);
-	Effect* eCombine = new Effect(combine);
-	eCombine->addParameter("level", combine->paramAddr(Gain::LEVEL));
-	eCombine->setParameter("level", 1.0);
-	master->addDevice("combine", eCombine);
-	combine->setInputType(input_type::SUM);
-
-	//simple bypass circuit
-	master->patch("in:0", "mute");
-	master->patch("sine0", "adder");
-	master->patch("zero0", "adder");
-	master->patch("adder", "mult");
-	master->patch("zero1", "mult");
-	master->patch("mult", "sine1:frequency");
-	master->patch("mute", "combine");
-	master->patch("sine1", "combine");
-	master->patch("combine", "out:0");
-	//master->patch("g1", "out:1");
-	//master->patch("wave", "dist:level");
-
-	master->optimize();
-
-	Circuit* generated = fileToCircuit("C:\\GitHub\\patch-ware\\patch-ware\\TestEffect.xml");
-
+	Circuit* generated = fileToCircuit("C:\\GitHub\\patch-ware\\patch-ware\\CheapReverb.xml");
+	if (generated == NULL) {
+		error("there was a problem somewhere...");
+		std::cin.get();
+		return;
+	}
+	generated->optimize();
 	//ProcessorCluster* pc = master->exportAsPrcoessor();
-	ProcessorCluster* pc = generated->exportAsPrcoessor();
+	ProcessorCluster* pc = generated->exportAsProcessor();
 
 	for (int channel = 0; channel < CHANNELS; ++channel) {
 		_inputs[channel] = pc->inputAddr(channel);
@@ -1331,11 +1231,11 @@ void timeTest() {
 	double output[BUFF_SIZE];
 
 	for (double i = 0.; i < BUFF_SIZE; i++) {
-		input[(int)i] = i;
+		input[(int)i] = i / BUFF_SIZE;
 	}
 	_inputs[0] = pc->inputAddr(0);
 	*pc->outputAddr(0) = &_outputs[0];
-
+	
 	auto start = std::chrono::system_clock::now();
 
 	for (int i = 0; i < BUFF_SIZE; i++) {
@@ -1390,7 +1290,7 @@ void timeTest() {
 	bool passed = true;
 	for (double i = 0; i < BUFF_SIZE; i++) {
 		if(BUFF_SIZE < 100)
-			std::cout << "index[" << (int)i << "]: " << output[(int)i] << '\n';
+			std::cout << "input: " << input[(int)i] << ",  output[" << (int)i << "]: " << output[(int)i] << '\n';
 		if (output[(int)i] != i) {
 			passed = false;
 			//std::cout << "index[" << (int)i << "] does not match!\n";
@@ -1516,7 +1416,7 @@ void fftwTest() {
 
 void fileReadTest() {
 
-	std::string filename = "C:\\GitHub\\patch-ware\\patch-ware\\TestEffect.xml";
+	std::string filename = "C:\\GitHub\\patch-ware\\patch-ware\\CheapReverb.xml";
 	Circuit* circuit = fileToCircuit(filename);
 
 	if (circuit) {
@@ -1528,17 +1428,59 @@ void fileReadTest() {
 	std::cin.get();
 }
 
+void biquadTest() {
+	Biquad b;
+	BiquadPeak peak;
+	
+	b.setType(bq_type_peak);
+	b.setFc(500. / 48000.);
+	b.setPeakGain(6.);
+	b.setQ(0.7);
+
+	*peak.paramAddr(BiquadPeak::Q) = 0.7;
+	*peak.paramAddr(BiquadPeak::FC) = 500;
+	*peak.paramAddr(BiquadPeak::PEAK) = 6.;
+	double* input = peak.addInput();
+	double output;
+	peak.addToOutputs(&output);
+
+	const int SIZE = 100;
+
+	double in[SIZE];
+	for (int i = 0; i < SIZE; ++i) {
+		in[i] = (double)i / (double)SIZE;
+	}
+
+	double outs[2][SIZE];
+
+	for (int i = 0; i < SIZE; i++) {
+		outs[1][i] = peak.processSignal(in[i]);
+		outs[0][i] = b.process(in[i]);
+		
+	}
+
+	for (int i = 0; i < SIZE; i++) {
+		std::cout << "Nigels's biquad[" << i << "]: " << outs[0][i] << ", my biquad[" << i << "]: " << outs[1][i] << '\n';
+	}
+
+	std::cin.get();
+}
+
+
+
 int main(){
     
+	//biquadTest();
+
 	//fileReadTest();
 
 	//listTest();
 
-	//timeTest();
+	timeTest();
 
 	//fftwTest();
 
-	rtAudioTest();
+	//rtAudioTest();
 
 	//envelopeTest();
 

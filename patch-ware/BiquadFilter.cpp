@@ -20,12 +20,12 @@ BiquadFilter::BiquadFilter() : SignalProcessor() {
 	//make fir half
     fir = new FIRFilter;
     fir->setOrder(2);
-	fir->type = SUM;
+	fir->type = AVERAGE;
 	
 	//make iir half
     iir = new IIRFilter;
     iir->setOrder(2);
-	iir->type = SUM;
+	iir->type = AVERAGE;
 
 }
 
@@ -60,9 +60,32 @@ double BiquadFilter::processSignal(const double &signal){
         iir->params[BYPASS] = 1.;
         fir->params[BYPASS] = 1.;
     }
+
+	//set internal filters' coefficients
+	fir->params[FIRFilter::COEFFICIENTS] = params[A0];
+	fir->params[FIRFilter::COEFFICIENTS + 1] = params[A1];
+	fir->params[FIRFilter::COEFFICIENTS + 2] = params[A2];
+
+	iir->params[IIRFilter::COEFFICIENTS] = params[B0];
+	iir->params[IIRFilter::COEFFICIENTS + 1] = params[B1];
+	iir->params[IIRFilter::COEFFICIENTS + 2] = params[B2];
+
 	// [signal] >>>> input >>>> fir >>>> iir >>>> output >>>>
-	return iir->processSignal(fir->processSignal(signal));
-    
+	//bool neg = (signal < 0);
+	//double sig = signal;
+	
+	//sig = log(abs(sig))*20.;
+	double out = iir->processSignal(fir->processSignal(signal));
+	//if (abs(out) > 1.) {
+	//	for (int i = 0; i < 2; i++) {
+	//		iir->registers[i] = 0.;
+	//		fir->registers[i] = 0.;
+	//	}
+	//}
+	return out;
+	//sig = pow(10., (sig / 20.));
+	//if (neg) sig *= -1.;
+	//return sig;
 }
 
 //EOF

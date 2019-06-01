@@ -137,6 +137,7 @@ PatchDevice* stringToDevice(const std::string &str) {
 		effect->addParameter("fc", bandpass->paramAddr(BiquadBandpass::FC));
 		effect->addParameter("peak", bandpass->paramAddr(BiquadBandpass::PEAK));
 
+		out = effect;
 	}
 	else if (str == "BiquadPeak") {
 		BiquadPeak* peak = new BiquadPeak;
@@ -147,9 +148,35 @@ PatchDevice* stringToDevice(const std::string &str) {
 		effect->addParameter("fc", peak->paramAddr(BiquadBandpass::FC));
 		effect->addParameter("peak", peak->paramAddr(BiquadBandpass::PEAK));
 
+		out = effect;
+	}
+	else if (str == "BiquadLowpass") {
+		BiquadLowpass* lp = new BiquadLowpass;
+		Effect* effect = new Effect(lp);
+
+		//expose only bandpass parameters
+		effect->addParameter("q", lp->paramAddr(BiquadBandpass::Q));
+		effect->addParameter("fc", lp->paramAddr(BiquadBandpass::FC));
+		effect->addParameter("peak", lp->paramAddr(BiquadBandpass::PEAK));
+
+		out = effect;
+	}
+	else if (str == "BiquadHighpass") {
+		BiquadHighpass* hp = new BiquadHighpass;
+		Effect* effect = new Effect(hp);
+
+		//expose only bandpass parameters
+		effect->addParameter("q", hp->paramAddr(BiquadBandpass::Q));
+		effect->addParameter("fc", hp->paramAddr(BiquadBandpass::FC));
+		effect->addParameter("peak", hp->paramAddr(BiquadBandpass::PEAK));
+
+		out = effect;
 	}
 	else if (str == "Cicuit") {
-		//TODO: build Circuit
+		//References another circuit, set a dummy pointer for now,
+		//We'll have to attempt to link them togeter after reading all available
+		//circuits from file.
+		out = new Circuit;
 	}
 	else if (str == "Compressor") {
 		Compressor * comp = new Compressor;
@@ -314,27 +341,56 @@ Circuit* fileToCircuit(const std::string &filename) {
 			next = (char)file.get();
 		}
 	}
-	int channels = 1;
+	int input_channels = -1;
+	int output_channels = -1;
 	for (auto descriptor = circuitDescriptors.begin(); descriptor != circuitDescriptors.end(); ++descriptor) {
 		if (descriptor->first == "channels") {
 			try {
-				channels = std::stoi(descriptor->second);
+				if(input_channels == -1)
+					input_channels = std::stoi(descriptor->second);
+				if(output_channels == -1)
+					output_channels = std::stoi(descriptor->second);
 			}
 			catch (std::exception &e) {
 				error("XML file parser error: channels attribute cannot be cast to integer (" + descriptor->second + ')');
 				return NULL;
 			}
 		}
+		if (descriptor->first == "input_channels") {
+			try {
+				input_channels = std::stoi(descriptor->second);
+			}
+			catch (std::exception &e) {
+				error("XML file parser error: input_channel attribute cannot be cast to integer (" + descriptor->second + ')');
+				return NULL;
+			}
+		}
+		if (descriptor->first == "output_channels") {
+			try {
+				if (output_channels == -1)
+					output_channels = std::stoi(descriptor->second);
+			}
+			catch (std::exception &e) {
+				error("XML file parser error: output_channel attribute cannot be cast to integer (" + descriptor->second + ')');
+				return NULL;
+			}
+		}
 	}
 
-	Patch* inputPatches = new Patch[channels];
-	Patch* outputPatches = new Patch[channels];
+	if (input_channels < 0 || output_channels < 0) {
+		error("XML file parser error: Circuit channels must be specified in parent circuit tag");
+		return NULL;
+	}
+	Patch* inputPatches = new Patch[input_channels];
+	Patch* outputPatches = new Patch[output_channels];
 
-	for (int channel = 0; channel < channels; channel++) {
+	for (int channel = 0; channel < input_channels; channel++) {
 		circuit->addInput(&inputPatches[channel]);
+	}
+	for (int channel = 0; channel < output_channels; channel++) {
 		circuit->addOutput(&outputPatches[channel]);
 	}
-	
+
 	eatUntil(file, '<');
 
 	//vector of pairs of pairs of strings
@@ -477,7 +533,7 @@ Circuit* fileToCircuit(const std::string &filename) {
 
 		
 
-		//ad device to circuit
+		//add device to circuit
 		circuit->addDevice(name, patchDevice);
 
 		eatUntil(file, '<');
@@ -563,6 +619,9 @@ Circuit* fileToCircuit(const std::string &filename) {
 				for (auto pair = tag->second.begin(); pair != tag->second.end(); ++pair) {
 					if (pair->first == "name") {
 						name = pair->second;
+						if (name == "regen") {
+							int stall = 0;
+						}
 					}
 					else if (pair->first == "value") {
 						value = pair->second;
@@ -692,6 +751,12 @@ Circuit* fileToCircuit(const std::string &filename) {
 		}
 
 		//attempt patch
+		if (dynamic_cast<Circuit*>(circuit->getDevice(input)) != NULL || 
+			dynamic_cast<Circuit*>(circuit->getDevice(output)) != NULL) {
+			//patch references a circuit, patch it later
+			//patchLater[circuitName] = std::pair<std::string, std::string>(input, output);
+
+		}
 		if (!circuit->patch(input, output)) {
 			error("XML file parser error: Patch failed.\n\tinput = " + input + "\n\toutput = " + output);
 			return NULL;
@@ -699,6 +764,9 @@ Circuit* fileToCircuit(const std::string &filename) {
 		}
 
 	}
+
+	//add to global circuit list
+	//circuit_master[circuitName] = circuit;
 
 	return circuit;
 

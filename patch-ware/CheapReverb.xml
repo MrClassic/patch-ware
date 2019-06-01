@@ -1,0 +1,86 @@
+
+<Circuit name="circuit" channels="1">
+
+  <Delay name="early">
+    <param name="mix" value="0.8"></param>
+    <param name="regen" value="7307"></param>
+    <param name="decay" value="0.34"></param>
+    <param name="bypass" value="0.0"></param>
+  </Delay>
+  
+	<Delay name="mid">
+    <param name="mix" value="0.55"></param>
+    <param name="regen" value="10307"></param>
+    <param name="decay" value="0.43"></param>
+    <param name="bypass" value="0.0"></param>
+  </Delay>
+	
+	<Delay name="late">
+    <param name="mix" value="0.4"></param>
+    <param name="regen" value="17571"></param>
+    <param name="decay" value="0.37"></param>
+    <param name="bypass" value="0.0"></param>
+  </Delay>
+	
+	<BiquadLowpass name="pass1">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="2700"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadLowpass>
+	
+	<BiquadLowpass name="pass2">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="700"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadLowpass>
+  
+	<BiquadLowpass name="pass3">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="400"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadLowpass>
+	
+	<Gain name="dry">
+		<param name="level" value="0.3"></param>
+	</Gain>
+	
+	<Gain name="wet">
+		<param name="level" value="0.7"></param>
+	</Gain>
+	
+	<Gain name="preGain">
+		<param name="level" value="10.0"></param>
+	</Gain>
+	
+	<Gain name="output">
+		<param name="level" value="1.0"></param>
+    <input_type value="SUM"></input_type>
+	</Gain>
+
+	
+	--patches--
+	
+	--input to splitter
+	<Patch input="in:0" output="preGain"></Patch>
+  
+  -- wet track
+  <Patch input="preGain" output="pass1"></Patch>
+  <Patch input="pass1" output="early"></Patch>
+  <Patch input="early" output="pass2"></Patch>
+  <Patch input="pass2" output="mid"></Patch>
+  <Patch input="mid" output="pass3"></Patch>
+  <Patch input="pass3" output="late"></Patch>
+  <Patch input="late" output="wet"></Patch>
+  <Patch input="wet" output="output"></Patch>
+  
+  -- dry track
+  <Patch input="pass1" output="dry"></Patch>
+  <Patch input="dry" output="output"></Patch>
+  
+  -- output
+  <Patch input="output" output="out:0"></Patch>
+  
+</Circuit>

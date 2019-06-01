@@ -1,7 +1,12 @@
 /* ******************************************************************
  * File:   BiquadPeak.h
  * Author: Nate Gallegos
- *
+ * 
+ * Peak Biquad filter.
+ * Kinda like a bandpass, but boosts the frequency range (i think).
+ * isolates target frequencies in the signal. 
+ * make that vocal range POP by giving it a slight boost.
+ * 
  * Log
  *      10/24/18
  *		Created!
@@ -12,6 +17,8 @@
 #ifndef BIQUADPEAK_H
 #define	BIQUADPEAK_H
 
+//Peak Filter implementation from the Biquad filter.
+//A useful tool for any audio engineer
 class BiquadPeak : public BiquadFilter {
 public:
 	BiquadPeak();

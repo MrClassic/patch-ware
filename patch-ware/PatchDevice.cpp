@@ -1,5 +1,6 @@
 
-#ifndef PARAMETERIZABLE_H
+
+/*#ifndef PARAMETERIZABLE_H
 
 
 #include <string>
@@ -13,3 +14,4 @@ private:
 };
 
 #endif // !PARAMETERIZABLE_H
+*/

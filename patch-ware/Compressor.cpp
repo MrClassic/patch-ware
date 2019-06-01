@@ -47,7 +47,9 @@ double Compressor::processSignal(const double &signal){
 		return signal;
 
 	// *** calculate compression ***
-
+	//BUFFER is where compression starts happening
+	//THRESH is where compression maxes out before being boosted
+	//MAX is the final signal's max output
     bool negative = signal < 0;
 
 	double sig = signal;

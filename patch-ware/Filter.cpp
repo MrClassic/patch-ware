@@ -67,6 +67,9 @@ void Filter::setOrder(int order){
 
     //array to copy into
     circular_stack<double>newRegs(order);
+	for (int i = 0; i < order; i++) {
+		newRegs[i] = 0.;
+	}
    
 	//copy register values
 	newRegs << registers;

@@ -22,6 +22,8 @@
 #include "BiquadFilter.h"
 #include "BiquadBandpass.h"
 #include "BiquadPeak.h"
+#include "BiquadLowpass.h"
+#include "BiquadHighpass.h"
 #include "Gain.h"
 #include "Gate.h"
 #include "FIRFilter.h"
@@ -45,6 +47,9 @@
 
 #include "Error.h"
 
+//Globals
+//std::map<std::string, Circuit*> circuit_master;
+//std::map<std::string, std::pair<std::string, std::string>> patchLater;
 
 void eatUntil(std::ifstream &file, char find);
 

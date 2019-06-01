@@ -2,6 +2,10 @@
  * File:   BiquadFilter.h
  * Author: Nate Gallegos
  * 
+ * Standard, Open-ended biquad filter. Use as is for a challenge
+ * (or if you are a DSP guru), or use one of the sub classes that
+ * shape the frequency response for you... Your call!
+ * 
  * Log 
  *      5/11/17
  *      File Created

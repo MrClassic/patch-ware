@@ -19,6 +19,8 @@ public:
 
 	virtual void updateWaveOffset() = 0;
 
+	void process();
+
 	enum parameters {
 		FREQUENCY = 0,
 		AMPLITUDE,
@@ -33,7 +35,7 @@ protected:
 
 	double lastFreq, lastPhase, lastAmp, phaseCorrector;
 
-	void process();
+	
 	
 	virtual double generate() = 0;
 

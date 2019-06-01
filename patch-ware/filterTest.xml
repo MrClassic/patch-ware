@@ -1,0 +1,29 @@
+
+<Circuit name="circuit" channels="1">
+  
+  <SineWaveGenerator name="sine">
+    <param name="amplitude" value="5"></param>
+    <param name="frequency" value="0.5"></param>
+  </SineWaveGenerator>
+  
+  <ZeroWaveGenerator name="zero">
+    <param name="amplitude" value="5.1"></param>
+  </ZeroWaveGenerator>
+  
+  <Gain name="adder">
+    <param name="level" value="1.0"></param>
+    <input_type value="SUM"></input_type>
+  </Gain>
+
+  <BiquadPeak name="peak">
+    <param name="fc" value="1500"></param>
+    <param name="peak" value="5"></param>
+  </BiquadPeak>
+  --  Patches --
+  <Patch input="sine" output="adder"></Patch>
+  <Patch input="zero" output="adder"></Patch>
+  <Patch input="adder" output="peak:q"></Patch>
+  <Patch input="in:0" output="peak"></Patch>
+  <Patch input="peak" output="out:0"></Patch>
+
+</Circuit>

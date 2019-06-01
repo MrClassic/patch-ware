@@ -50,7 +50,9 @@ double Delay::processSignal(const double &signal){
     double outSignal = params[MIX] * signal;
 
 	//mix in stored signal
-    outSignal += params[DECAY] * registers.pop();
+	double pop = 0.;
+	registers.pop(pop);
+    outSignal += params[DECAY] * pop;
 
 	//push output signal into memory registers
     registers.push(outSignal);

@@ -1,26 +1,28 @@
 /* ******************************************************************
- * File:   BiquadBandpass.h
+ * File:   BiquadHighpass.h
  * Author: Nate Gallegos
  * 
- * Standard Biquad Filter implementation designed for
- * bandpass filtering.
+ * High pass filter implementation of the BiquadFilter.
+ * Trims low frequencies and boosts higher frequencies.
+ * Make those cymbals shine or cut those nasty inaudible
+ * low frequencies your microphone picked up!
  * 
  * Log 
- *      10/24/18
+ *      10/25/18
  *		Created!
  ***************************************************************** */
 
 #include "BiquadFilter.h"
 
-#ifndef BIQUADBANDPASS_H
-#define	BIQUADBANDPASS_H
+#ifndef BIQUADHIGHPASS_H
+#define	BIQUADHIGHPASS_H
 
-//Bandpass Filter, Look it up sometime... they're neat-o!
-class BiquadBandpass : public BiquadFilter {
+//Highpass filter, cut the bass, boost the high!
+class BiquadHighpass : public BiquadFilter {
 public:
-	BiquadBandpass();
-	BiquadBandpass(const BiquadBandpass& orig);
-    ~BiquadBandpass();
+	BiquadHighpass();
+	BiquadHighpass(const BiquadHighpass& orig);
+    ~BiquadHighpass();
     double processSignal(const double &signal);
     
 	enum parameters {

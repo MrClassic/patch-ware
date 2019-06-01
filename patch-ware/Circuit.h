@@ -1,3 +1,19 @@
+/* ********************************************************************
+* File:		Circuit.h
+* Author:	Nate Gallegos
+* 
+* The ciruit class is a special case PatchDevice, and sits at the heart
+* of the Patch-Ware system. Circuits contain many effects and manage the
+* Patch connections between them. I named it a circuit because a visual
+* representation of Effects with patches resembles that of a Circuit, 
+* where the signal trickles through multiple effects via connections.
+* Hopefully one day I get around to documenting this visually in some
+* great way that explains this concept well... until then you have to use
+* your imagination.
+* 
+* 
+********************************************************************* */
+
 #ifndef CIRCUIT_H
 #define CIRCUIT_H
 
@@ -21,7 +37,11 @@ class Effect;
 class WaveGenerator;
 class Patch;
 class PatchDevice;
-class Circuit : public InputDevice, public OutputDevice, public Timer {
+
+//Circuit class. It does a lot of stuff:
+//	Manages many patch devices, but is a patch device it self.
+//	Manages the patches that exist between "owned" devices
+class Circuit : public InputDevice, public OutputDevice, public Timer{
 
 
 public:
@@ -53,7 +73,7 @@ public:
 	//optimizes circuit path (called implicitly on process)
 	void optimize();
 
-	ProcessorCluster* exportAsPrcoessor();
+	ProcessorCluster* exportAsProcessor();
 
 	//process circuit inputs and send to outputs
 	virtual bool process();
@@ -82,6 +102,10 @@ private:
 	void removePatch(Patch * const);
 
 	//string parser. parses based on ':'
+	//returns string array through "out" pointer,
+	//returns array size via return type
+	// !!! CREATES THE STRINGS ON THE HEAP !!!
+	//You are responsible for cleaning up your mess
 	int parse(const std::string &str, std::string *&out) const;
 
 	//increments circuit level recursively

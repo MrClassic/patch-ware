@@ -39,9 +39,10 @@ double BiquadPeak::processSignal(const double &signal) {
 
 void BiquadPeak::updateCoefficients() {
 	if (lastQ != params[Q] || lastPeak != params[PEAK] || lastFC != params[FC]) {
+		
 		double v, k, norm;
 		v = pow(10., pw_abs(params[PEAK]) / 20.);
-		k = tan(PI * params[FC] / frameRate); //<------ frameRate or (1. / frameRate)???
+		k = tan(PI * params[FC] / frameRate);// (1. / frameRate)); //<------ frameRate or (1. / frameRate)???
 
 		if (params[PEAK] >= 0) { //<--- frequency boost
 			norm = 1. / (1. + 1. / params[Q] * k + k * k);

@@ -1,0 +1,37 @@
+
+<Circuit name="circuit" channels="1">
+  
+	<BiquadHighpass name="highpass">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="100"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadHighpass>
+	
+	<BiquadLowpass name="lowpass">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="13200"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadLowpass>
+
+	<Gain name="boost">
+		<param name="level" value="10."></param>
+	</Gain>
+
+	<Delay name="delay">
+		<param name="mix" value="1.0"></param>	
+		<param name="regen" value="12000"></param>	
+		<param name="decay" value="0.4"></param>	
+	</Delay>
+	
+	--patches--
+	
+	<Patch input="in:0" output="highpass"></Patch>
+	<Patch input="highpass" output="lowpass"></Patch>
+	<Patch input="lowpass" output="boost"></Patch>
+	<Patch input="boost" output="delay"></Patch>
+	<Patch input="delay" output="out:0"></Patch>
+	
+	
+</Circuit>

@@ -69,6 +69,7 @@ public:
 		//send result to outputs
 		output(signal);
 
+		return true;
 	};
     
     bool getBypass() {return params["bypass"];}

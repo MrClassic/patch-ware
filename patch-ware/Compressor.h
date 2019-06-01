@@ -20,7 +20,7 @@
  * Purpose: To model a compressor for audio. The Compressor will take in double
  * values as an input signal. Any signal value greater than the buffer value 
  * will be compressed to max out at the threshold value. All input signals are
- * boosted such that the threshold maximum value for a compressed sig nal will
+ * boosted such that the threshold maximum value for a compressed signal will
  * output as the maximum value for the signal.
  ************************************************************************** */
 class Compressor : public SignalProcessor{

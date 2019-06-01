@@ -32,7 +32,7 @@ double IIRFilter::pushDouble(double signal){
     out += params[COEFFICIENTS] * signal;
     //int startIndex = regStart;
     for(int reg = 0; reg < registers.size(); reg++){
-        out += params[COEFFICIENTS + reg + 1] * registers[reg];
+        out -= params[COEFFICIENTS + reg + 1] * registers[reg];
     }
     registers.push(out);
     

@@ -1,0 +1,80 @@
+
+<Circuit name="circuit" channels="1">
+  
+
+	<Distortion name="max">
+    		<param name="threshold" value="0.6"></param>
+	</Distortion>
+
+	<Compressor name="drive">
+		<param name="max" value="0.6"></param>
+		<param name="threshold" value="0.3"></param>
+		<param name="buffer" value="0.1"></param>
+		<input_type value="MAX"></input_type>
+	</Compressor>
+	<Compressor name="comp">
+		<param name="max" value="1.0"></param>
+		<param name="threshold" value="0.8"></param>
+		<param name="buffer" value="0.5"></param>
+		<input_type value="MAX"></input_type>
+	</Compressor>
+	
+	<BiquadHighpass name="highpass">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="200"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadHighpass>
+	
+	<BiquadLowpass name="lowpass">
+		<param name="q" value="0.7071"></param>
+		<param name="peak" value="0"></param>
+		<param name="fc" value="5200"></param>
+		<param name="bypass" value="0.0"></param>
+	</BiquadLowpass>
+	
+	
+	<Gain name="splitter">
+		<param name="level" value="1.0"></param>
+	</Gain>
+	<Gain name="boost">
+		<param name="level" value="10.0"></param>
+	</Gain>
+	
+	<Gain name="clean">
+		<param name="level" value="0.3"></param>
+	</Gain>
+
+	<Gain name="compMix">
+		<param name="level" value="0.7"></param>
+	</Gain>
+	
+
+	<Gain name="mix">
+		<param name="level" value="1.0"></param>
+		<input_type value="SUM"></input_type>
+	</Gain>
+	
+	--patches--
+	
+	--input to splitter
+	<Patch input="in:0" output="splitter"></Patch>
+
+	--distortion side of circuit
+	<Patch input="splitter" output="lowpass"></Patch>
+	<Patch input="lowpass" output="highpass"></Patch>
+	<Patch input="highpass" output="boost"></Patch>
+	<Patch input="boost" output="drive"></Patch>
+	<Patch input="drive" output="max"></Patch>
+	<Patch input="max" output="comp"></Patch>
+	<Patch input="comp" output="compMix"></Patch>
+	<Patch input="compMix" output="mix"></Patch>
+	
+	--clean part of circuit
+	<Patch input="splitter" output="clean"></Patch>
+	<Patch input="clean" output="mix"></Patch>
+	
+	--mix to output
+	<Patch input="mix" output="out:0"></Patch>
+	
+</Circuit>
