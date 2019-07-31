@@ -50,7 +50,7 @@ public:
 	//no check is made. I am assuming you (future me) won't be an asshole
 	//and break this delicate system!!!
 	bool mapToInput(const int inputChannel, double * const mapping) {
-		if (inputChannel >= inputMappings.size()) {
+		if (inputChannel >= inputMappings.size() || inputChannel < 0) {
 			return false;
 		}
 		inputMappings[inputChannel] = mapping;
