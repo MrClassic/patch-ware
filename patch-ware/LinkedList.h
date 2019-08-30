@@ -111,8 +111,8 @@ public:
 			else {
 				//deep copy
 				// !! (not tested) !!
-				tail->data = new T;
-				*tail->data = *theirs->data;
+				//tail->data = new T;
+				//*tail->data = *theirs->data;
 			}
 			theirs = theirs->next;
 		}

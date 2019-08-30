@@ -21,6 +21,8 @@
 //patchware includes
 #include "ProcessorCluster.h"
 #include "WaveGenerator.h"
+#include "FixedInputDevice.h"
+#include "FixedOutputDevice.h"
 #include "Effect.h"
 #include "Envelope.h"
 #include "pwmath.h"
@@ -41,13 +43,16 @@ class PatchDevice;
 //Circuit class. It does a lot of stuff:
 //	Manages many patch devices, but is a patch device it self.
 //	Manages the patches that exist between "owned" devices
-class Circuit : public InputDevice, public OutputDevice, public Timer{
+class Circuit : public FixedInputDevice, public FixedOutputDevice, public Timer{
 
 
 public:
 
 	//cons and dee
 	Circuit();
+	Circuit(const unsigned int &channels);
+	Circuit(const unsigned int &inputs, const unsigned int &outputs);
+
 	Circuit(const Circuit &);
 	~Circuit();
 
@@ -79,8 +84,10 @@ public:
 	virtual bool process();
 
 	//inherited overloads
-	bool removeOutput(Patch * const);
-	bool removeInput(Patch * const);
+	virtual LinkedList<Patch> resizeInputChannels(const unsigned int &channels);
+	virtual LinkedList<Patch> resizeOutputChannels(const unsigned int &channels);
+	//bool removeOutput(Patch * const);
+	//bool removeInput(Patch * const);
 
 private:
 
@@ -113,8 +120,8 @@ private:
 
 	//LinkedList Apply Functions
 	static bool processInOrder(PatchDevice* pd, void* args);
-	static bool getInputs(Patch* patch, void* args);
-	static bool sendOutputs(Patch* patch, void* args);
+	//static bool getInputs(Patch* patch, void* args);
+	//static bool sendOutputs(Patch* patch, void* args);
 
 	//my variables, no touchie!!!
 	bool changed = false;

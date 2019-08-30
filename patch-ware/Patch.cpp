@@ -54,12 +54,12 @@ void Patch::getChannels(int &input, int &output) {
 	d.compare = this;
 	d.index = -1;
 	if (getInput() != NULL) {
-		getInput()->outputs.apply(find, &d);
+		getInput()->getOutputPatches().apply(find, &d);
 		input = d.index;
 		d.index = -1;
 	}
 	if (getOutput() != NULL) {
-		getOutput()->inputs.apply(find, &d);
+		getOutput()->getInputPatches().apply(find, &d);
 		output = d.index;
 	}
 }

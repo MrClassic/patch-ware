@@ -174,7 +174,7 @@ PatchDevice* stringToDevice(const std::string &str) {
 	}
 	else if (str == "Cicuit") {
 		//References another circuit, set a dummy pointer for now,
-		//We'll have to attempt to link them togeter after reading all available
+		//We'll have to attempt to link them together after reading all available
 		//circuits from file.
 		out = new Circuit;
 	}

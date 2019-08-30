@@ -5,6 +5,8 @@
  * Log:
  *          2/27/18
  *          File Created
+ *			8/29/19 
+ *			Abstracted to interface
  * 
  ********************************************************************** */
 
@@ -38,25 +40,21 @@ public:
 
     InputDevice();
     
-    InputDevice(Patch * const patch);
-    
-    InputDevice(const InputDevice &base);
-    
 	virtual ~InputDevice() {};
     
-    virtual bool addInput(Patch * const patch);
+    virtual bool addInput(Patch * const patch) = 0;
     
-    virtual bool removeInput(Patch * const patch);
+    virtual bool removeInput(Patch * const patch) = 0;
     
-    int getInputCount() const;
+    virtual int getInputCount() const = 0;
     
-    bool checkInputs() const;
+    virtual bool checkInputs() const;
     
-    bool isReady() const;
+    virtual bool isReady() const = 0;
     
-    operator bool() const;
+    virtual operator bool() const;
 
-	LinkedList<Patch> getInputPatches();
+	virtual LinkedList<Patch> getInputPatches() = 0;
     
     virtual void setInputType(input_type in);
     
@@ -66,27 +64,21 @@ public:
 
 protected:
     
-    LinkedList<double> getInputs() const;
+    virtual LinkedList<double> getInputs() const = 0;
     
-    double input() const;
+    virtual double input() const;
     
-
+    virtual double averageInputs() const;
     
-    static bool checkInputsPrivate(Patch* data, void* arg);
+    virtual double maxInput() const;
     
-    static bool getInputsPrivate(Patch* patch, void* arg);
+    virtual double minInput() const;
     
-    double averageInputs() const;
+    virtual double sumInputs() const;
     
-    double maxInput() const;
+    virtual double multiplyInputs() const;
     
-    double minInput() const;
-    
-    double sumInputs() const;
-    
-    double multiplyInputs() const;
-    
-    LinkedList<Patch> inputs;
+    //LinkedList<Patch> inputs;
     
     input_type inputType;
     

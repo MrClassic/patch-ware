@@ -45,6 +45,14 @@ public:
 
 	std::vector<double*>& getOutputs();
 
+	void assumeValidInputs();
+
+	void assumeValidOutputs();
+
+	void setInputValidation(const unsigned int channel, const bool valid);
+
+	void setOutputValidation(const unsigned int channel, const bool valid);
+
 protected:
 
 	double condenseInputs();
@@ -56,6 +64,10 @@ protected:
 	
 	std::vector<double*>
 			outputs;	//array of pointers
+
+	std::vector<bool>
+			valid_inputs,
+			valid_outputs;
 
 	double currentTime; //time tracker
 

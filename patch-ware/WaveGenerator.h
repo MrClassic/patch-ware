@@ -25,7 +25,7 @@
 #ifndef WAVEGENERATOR_H
 #define	WAVEGENERATOR_H
 
-#include "OutputDevice.h"
+#include "DynamicOutputDevice.h"
 #include "Parameterizable.h"
 #include "Timer.h"
 #include "WaveProcessor.h"
@@ -38,9 +38,9 @@ class Parameter;
  * generator requires a feed of time intervals and a frequency to generate 
  * double values as displacement output to a speaker.
  ************************************************************************* */
-class OutputDevice;
+class DynamicOutputDevice;
 class Parameterizable;
-class WaveGenerator : public OutputDevice, public Parameterizable, public Timer{
+class WaveGenerator : public DynamicOutputDevice, public Parameterizable, public Timer{
     
     /* ****************************************************************
      *                  Public Section

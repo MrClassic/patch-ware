@@ -5,7 +5,8 @@
  * Log:
  *          2/27/18
  *          File Created
- * 
+ *			8/29/19 
+ *			Abstracted to interface
  ********************************************************************** */
 
 #ifndef OUTPUTDEVICE_H
@@ -31,33 +32,33 @@ public:
 
     OutputDevice();
     
-    OutputDevice(Patch * const patch);
+    //OutputDevice(Patch * const patch);
     
-    OutputDevice(const OutputDevice &base);
+    //OutputDevice(const OutputDevice &base);
     
-    virtual ~OutputDevice(){};
+	virtual ~OutputDevice() {};
     
-    virtual bool addOutput(Patch * const patch);
+    virtual bool addOutput(Patch * const patch) = 0;
     
-    virtual bool removeOutput(Patch * const patch);
+    virtual bool removeOutput(Patch * const patch) = 0;
     
-    int getOutputCount() const;
+    virtual int getOutputCount() const = 0;
     
-    bool checkOutputs() const;
+    virtual bool checkOutputs() const = 0;
     
 protected:
     
-    void output(const double signal) const;
+    virtual void output(const double signal) const = 0;
     
-    LinkedList<Patch> getOutputPatches();
+    virtual LinkedList<Patch> getOutputPatches() = 0;
     
 private:
     
-    static bool outputToPatches(Patch* patch, void* arg);
+    //static bool outputToPatches(Patch* patch, void* arg);
     
-    static bool checkOutputsPrivate(Patch* patch, void* arg);
+    //static bool checkOutputsPrivate(Patch* patch, void* arg);
     
-    LinkedList<Patch> outputs;
+    //LinkedList<Patch> outputs;
 
 	friend Circuit;
 

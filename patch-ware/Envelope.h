@@ -51,12 +51,14 @@
 #define ENVELOPE_H
 
 //patchware includes
+#include "DynamicInputDevice.h"
+#include "DynamicOutputDevice.h"
 #include "Parameterizable.h"
 #include "Timer.h"
 #include "EnvelopeProcessor.h"
 
 //Envelope class
-class Envelope : public InputDevice, public OutputDevice, public Parameterizable, public Timer{
+class Envelope : public DynamicInputDevice, public DynamicOutputDevice, public Parameterizable, public Timer{
 
 //public shit
 public:

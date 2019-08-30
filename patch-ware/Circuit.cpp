@@ -33,6 +33,18 @@ Circuit::Circuit() {
 	lastPatches.reserve(20);
 }
 
+Circuit::Circuit(const unsigned int & channels) : FixedInputDevice(channels), FixedOutputDevice(channels){
+	level = 0;
+	firstPatches.resize(channels);
+	lastPatches.resize(channels);
+}
+
+Circuit::Circuit(const unsigned int & inputs, const unsigned int & outputs) : FixedInputDevice(inputs), FixedOutputDevice(outputs) {
+	level = 0;
+	firstPatches.resize(inputs);
+	lastPatches.resize(outputs);
+}
+
 Circuit::Circuit(const Circuit &other) {
 	level = 0;
 	//TODO: this!
@@ -771,8 +783,10 @@ ProcessorCluster* Circuit::exportAsProcessor() {
 			//reserve space for input channels
 			//allocate input channels
 			effect->getProc()->getInputs().resize(effect->getInputCount());
+			effect->getProc()->assumeValidInputs();
 			//allocate output channels
 			effect->getProc()->getOutputs().resize(effect->getOutputCount());
+			effect->getProc()->assumeValidOutputs();
 			return true;
 		}
 
@@ -786,6 +800,7 @@ ProcessorCluster* Circuit::exportAsProcessor() {
 			wg->getProc()->clear();
 			//reserve output channels
 			wg->getProc()->getOutputs().resize(wg->getOutputCount());
+			wg->getProc()->assumeValidOutputs();
 			return true;
 		}
 
@@ -799,8 +814,10 @@ ProcessorCluster* Circuit::exportAsProcessor() {
 			env->getProc()->clear();
 			//allocate input channels
 			env->getProc()->getInputs().resize(env->getInputCount());
+			env->getProc()->assumeValidInputs();
 			//allocate output channels
 			env->getProc()->getOutputs().resize(env->getOutputCount());
+			env->getProc()->assumeValidOutputs();
 			return true;
 		}
 
@@ -819,9 +836,30 @@ ProcessorCluster* Circuit::exportAsProcessor() {
 
 	ProcessorCluster* cluster = new ProcessorCluster;
 	cluster->inputMappings.resize(firstPatches.size());
-	cluster->inputs.resize(getInputCount());
+	cluster->inputs.resize(firstPatches.size());
 	cluster->outputMappings.resize(lastPatches.size());
-	cluster->outputs.resize(getOutputCount());
+	cluster->outputs.resize(lastPatches.size());
+	cluster->assumeValidInputs();
+	cluster->assumeValidOutputs();
+
+	//set cluster input and output validation.
+	//this will flag the absence of an input or output
+	//patch as invalid, so the processor cluster underneath 
+	//will know to ignore that input or output channel.
+
+	//validate inputs
+	for (int channel = 0; channel < getInputCount(); channel++) {
+		if (inputs[channel] == NULL) {
+			cluster->setInputValidation(channel, false);
+		}
+	}
+
+	//validate outputs
+	for (int channel = 0; channel < outputs.size(); channel++) {
+		if (outputs[channel] == NULL) {
+			cluster->setOutputValidation(channel, false);
+		}
+	}
 
 	//link is a slightly better lambda function name...
 	//This function "links" the Processors' pointers
@@ -1054,13 +1092,49 @@ bool Circuit::process() {
 	}
 	
 	
-	auto it = firstPatches.begin();
-	inputs.apply(getInputs, &it);
+	//auto it = firstPatches.begin();
+	//inputs.apply(getInputs, &it);
+
+	auto in_signals = getInputs();
+	if (in_signals.getSize() == firstPatches.size()) {
+		int channel = 0;
+		while (!in_signals.isEmpty()) {
+			double* pop = in_signals.pop_front();
+			if (pop) {
+				if (!firstPatches[channel]->pushSignal(*pop)) {
+					// !! push signal failed... !!
+				}
+				delete pop;
+				pop = NULL;
+			}
+			++channel;
+		}
+	}
+	else {
+		//input patch count != internal mapping array size...
+		//thats bad!!!
+		//exception?
+		//error log?
+	}
 
 	order.apply(processInOrder, NULL);
 
-	it = lastPatches.begin();
-	outputs.apply(sendOutputs, &it);
+	//it = lastPatches.begin();
+	//outputs.apply(sendOutputs, &it);
+
+	std::vector<double> signals_out;
+	signals_out.resize(lastPatches.size());
+	for (int channel = 0; channel < signals_out.size(); channel++) {
+		if (!lastPatches[channel]->requestSignal(signals_out[channel])) {
+			//failed requesting signal
+			//exception...?
+			//error log?
+		}
+	}
+
+	//send outputs to output patches
+	output(signals_out);
+
 	/*
 	//transfer signals from external inputs to "firstPatches"
 	LinkedList<Patch> inputs = getInputPatches();
@@ -1112,7 +1186,20 @@ bool Circuit::process() {
 	return true;
 }
 
+LinkedList<Patch> Circuit::resizeInputChannels(const unsigned int &channels) {
+	firstPatches.resize(channels);
+	return FixedInputDevice::resizeInputChannels(channels);
+}
+
+LinkedList<Patch> Circuit::resizeOutputChannels(const unsigned int &channels) {
+	lastPatches.resize(channels);
+	return FixedOutputDevice::resizeOutputChannels(channels);
+}
+
+/*
 bool Circuit::removeInput(Patch * const patch) {
+
+
 
 	LinkedList<Patch> copy = getInputPatches();
 	int index = -1;
@@ -1207,6 +1294,12 @@ bool Circuit::removeOutput(Patch * const patch) {
 	changed = true;
 	return true;
 }
+*/
+
+
+/*
+					Private Section
+*/
 
 /*
 	Remove Patch:
@@ -1447,6 +1540,7 @@ bool Circuit::processInOrder(PatchDevice* pd, void* args) {
 	return pd->process();
 }
 
+/*
 bool Circuit::getInputs(Patch* patch, void* args) {
 	std::vector<Patch*>::iterator *it = static_cast<std::vector<Patch*>::iterator *>(args);
 	double signal;
@@ -1464,5 +1558,5 @@ bool Circuit::sendOutputs(Patch* patch, void* args) {
 	patch->pushSignal(signal);
 	return true;
 }
-
+*/
 //EOF

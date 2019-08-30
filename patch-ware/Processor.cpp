@@ -77,6 +77,32 @@ std::vector<double*>& Processor::getOutputs() {
 	return outputs;
 }
 
+void Processor::assumeValidInputs() {
+	valid_inputs.resize(inputs.size());
+	for (int input = 0; input < valid_inputs.size(); input++) {
+		valid_inputs[input] = true;
+	}
+}
+
+void Processor::assumeValidOutputs() {
+	valid_outputs.resize(outputs.size());
+	for (int output = 0; output < valid_outputs.size(); output++) {
+		valid_outputs[output] = true;
+	}
+}
+
+void Processor::setInputValidation(const unsigned int channel, const bool valid) {
+	if (channel < valid_inputs.size()) {
+		valid_inputs[channel] = valid;
+	}
+}
+
+void Processor::setOutputValidation(const unsigned int channel, const bool valid) {
+	if (channel < valid_outputs.size()) {
+		valid_outputs[channel] = valid;
+	}
+}
+
 double Processor::condenseInputs() {
 
 	if (inputs.empty())

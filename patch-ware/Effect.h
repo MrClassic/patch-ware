@@ -13,6 +13,8 @@
 #ifndef EFFECT_H
 #define	EFFECT_H
 
+#include "DynamicOutputDevice.h"
+#include "DynamicInputDevice.h"
 #include "Parameterizable.h"
 #include "SignalProcessor.h"
 
@@ -23,7 +25,7 @@
 class InputDevice;
 class OutputDevice;
 class Parameterizable;
-class Effect : public InputDevice, public OutputDevice, public Parameterizable{
+class Effect : public DynamicInputDevice, public DynamicOutputDevice, public Parameterizable{
     
 protected:
 

@@ -11,6 +11,7 @@
  ********************************************************************** */
 
 #include "InputDevice.h"
+#include <float.h>
 
 /* ****************************************************************
  *                  Public Section
@@ -19,82 +20,10 @@
 InputDevice::InputDevice() {
 }
 
-InputDevice::InputDevice(Patch * const patch) {
-    addInput(patch);
-}
-
-InputDevice::InputDevice(const InputDevice &base) {
-    LinkedList<Patch> copy = base.inputs;
-    while (!copy.isEmpty()) {
-        addInput(copy.pop_front());
-    }
-}
-
-//O(1)
-
-bool InputDevice::addInput(Patch * const patch) {
-    if (patch != NULL) {
-        inputs.push_back(patch);
-        patch->setOutput(this);
-    }
-    return patch != NULL;
-}
-
-//O(2n)
-
-bool InputDevice::removeInput(Patch * const patch) {
-
-	return inputs.remove(patch);
-	/*
-    //shallow copy inputs
-    LinkedList<Patch> copy = inputs;
-	
-
-    //result to return, Patch removed: return true
-    bool result = false;
-
-    //shallow clear inputs
-    inputs.clear();
-
-    //copy Patches back into inputs
-    Patch *pop = copy.pop_front();
-    while (pop != NULL) {
-		
-        if (patch != pop) {
-            //not the patch to remove, re-add it back into inputs
-            inputs.push_back(pop);
-        } else {
-            //do not add the patch to "remove," return true
-			pop->setOutput(NULL);
-            result = true;
-        }
-
-        //pop next
-        pop = copy.pop_front();
-    }
-
-    return result;
-	*/
-}
-
-int InputDevice::getInputCount() const {
-    return inputs.getSize();
-}
-
 bool InputDevice::checkInputs() const {
     return isReady();
 }
 
-//O(n)
-
-bool InputDevice::isReady() const {
-    if (inputs.isEmpty()) {
-        return false;
-    }
-    
-    //return result of applying checkReady on all input patches
-    return inputs.apply(checkInputsPrivate, NULL);
-}
 
 //O(n)
 
@@ -109,16 +38,6 @@ void InputDevice::setInputType(input_type in){
 /* ****************************************************************
  *                  Protected Section
  **************************************************************** */
-
-LinkedList<double> InputDevice::getInputs() const {
-    LinkedList<double> list;
-    inputs.apply(getInputsPrivate, &list);
-    return list;
-}
-
-LinkedList<Patch> InputDevice::getInputPatches() {
-    return inputs;
-}
 
 double InputDevice::input() const{
     double out = 0.;
@@ -168,13 +87,9 @@ double InputDevice::averageInputs() const {
 
 double InputDevice::maxInput() const {
     LinkedList<double> signals = getInputs();
-    double* pop = signals.pop_front();
-    if(pop == NULL){
-        return 0.;
-    }
-    double largest = *pop;
-    delete pop;
-    pop = NULL;
+    
+    double largest = -DBL_MAX;
+    double* pop = NULL;
     while (!signals.isEmpty()) {
         pop = signals.pop_front();
         if(pop != NULL) {
@@ -184,18 +99,13 @@ double InputDevice::maxInput() const {
             delete pop;
         }
     }
-    return largest;
+    return largest != -DBL_MAX ? largest : 0.;
 }
 
 double InputDevice::minInput() const {
     LinkedList<double> signals = getInputs();
-    double* pop = signals.pop_front();
-    if(pop == NULL){
-        return 0.;
-    }
-    double smallest = *pop;
-    delete pop;
-    pop = NULL;
+    double* pop = NULL;
+    double smallest = DBL_MAX;
     while (!signals.isEmpty()) {
         pop = signals.pop_front();
         if(pop != NULL) {
@@ -205,7 +115,7 @@ double InputDevice::minInput() const {
             delete pop;
         }
     }
-    return smallest;
+	return  smallest != DBL_MAX ? smallest : 0.;
 }
 
 double InputDevice::sumInputs() const {
@@ -214,7 +124,7 @@ double InputDevice::sumInputs() const {
     while (!signals.isEmpty()) {
         double* pop = signals.pop_front();
         if (pop == NULL) {
-            // ...oops, how did that get there?
+            // nothing to see here...
         } else {
             sum += *pop;
             delete pop;
@@ -229,7 +139,7 @@ double InputDevice::multiplyInputs() const {
     while (!signals.isEmpty()) {
         double* pop = signals.pop_front();
         if (pop == NULL) {
-            // ...
+            // nothing to see here...
         } else {
             total *= *pop;
             delete pop;
@@ -238,26 +148,3 @@ double InputDevice::multiplyInputs() const {
     return total;
 }
 
-/* ****************************************************************
- *                  Private Section
- **************************************************************** */
-
-//O(n)
-//Function to pass to LinkedList.apply((bool*)(Patch*, void*), void*)
-bool InputDevice::checkInputsPrivate(Patch* patch, void *arg) {
-
-    //if true, keep checking.
-    //if false, stop looking and return false
-    return (*patch);
-}
-
-bool InputDevice::getInputsPrivate(Patch* patch, void* arg) {
-    LinkedList<double>* list = (LinkedList<double>*)arg;
-    double* in = new double;
-    if (patch->requestSignal(*in)) {
-        list->push_back(in);
-    } else {
-        delete in;
-    }
-    return true;
-}

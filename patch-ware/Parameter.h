@@ -11,6 +11,7 @@
 #define	PARAMETER_H
 
 #include "Patch.h"
+#include"DynamicInputDevice.h"
 
 #ifndef NULL
 #define NULL 0x0
@@ -22,7 +23,7 @@
  *          from outside the body of the Effect via a patched signal in.
  ************************************************************************* */
 class InputDevice;
-class Parameter : public InputDevice{
+class Parameter : public DynamicInputDevice{
     
 public:
     Parameter();

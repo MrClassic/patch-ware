@@ -237,7 +237,7 @@ bool Parameter::addInput(Patch * const patch) {
     } else {
         disconnect();
         
-		if (!InputDevice::addInput(patch)) {
+		if (!DynamicInputDevice::addInput(patch)) {
 			return false;
 		}
 		patched = true;
@@ -251,7 +251,7 @@ bool Parameter::removeInput(Patch * const patch) {
         LinkedList<Patch> patches = getInputPatches();
         //clear all input Patches (hopefully just one)
         while (!patches.isEmpty()) {
-            InputDevice::removeInput(patches.pop_front());
+            DynamicInputDevice::removeInput(patches.pop_front());
         }
         patched = false;
 		return true;

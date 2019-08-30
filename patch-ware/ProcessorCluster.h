@@ -27,7 +27,7 @@ public:
 
 		//move inputs to input mappings
 		for (int i = 0; i < inputMappings.size() && i < inputs.size(); ++i) {
-			*inputMappings[i] = inputs[i];
+			*inputMappings[i] = valid_inputs[i] ? inputs[i] : 0.0;
 		}
 
 		//traversal function for cluster order
@@ -40,7 +40,7 @@ public:
 
 		//move output mappings to actual outputs
 		for (int o = 0; o < outputMappings.size() && o < outputs.size(); ++o) {
-			*outputs[o] = outputMappings[o];
+			*outputs[o] = valid_outputs[o] ? outputMappings[o] : 0.0;
 		}
 
 	}
